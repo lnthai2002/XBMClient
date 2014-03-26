@@ -15,13 +15,7 @@
  */
 
 #include <bb/cascades/Application>
-
-#include <QLocale>
-#include <QTranslator>
-//#include "applicationui.hpp"
 #include "app.hpp"
-
-//#include <Qt/qdeclarativedebug.h>
 
 using namespace bb::cascades;
 
@@ -31,7 +25,6 @@ Q_DECL_EXPORT int main(int argc, char **argv)
 
     // Create the Application UI object, this is where the main.qml file
     // is loaded and the application scene is set.
-    //new ApplicationUI(&app);
     new App(&app);
     // Enter the application main event loop.
     return Application::exec();

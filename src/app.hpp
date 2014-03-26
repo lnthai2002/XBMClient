@@ -12,15 +12,11 @@
 #include <QString>
 #include "Server.hpp"
 
-using namespace bb::cascades;
-
 class App : public QObject
 {
     // Classes that inherit from QObject must have the Q_OBJECT macro so
     // the meta-object compiler (MOC) can add supporting code to the application.
     Q_OBJECT
-
-    Q_PROPERTY(bb::cascades::DataModel* dataModel READ dataModel CONSTANT)
 
 public:
     // Creates a new App object
@@ -30,13 +26,14 @@ public:
 	~App();
 
 	// Creates a new person object and saves it.
-	Q_INVOKABLE bool addServer(const QString &host, const QString &port, const QString &user, const QString &pass);
+	//Q_INVOKABLE bool addServer(const QString &host, const QString &port, const QString &user, const QString &pass);
 
 	// Update settings
-	Q_INVOKABLE bool updateServer(const QString &host, const QString &port, const QString &user, const QString &pass);
+	//Q_INVOKABLE bool updateServer(const QString &host, const QString &port, const QString &user, const QString &pass);
 
-	Q_INVOKABLE void refreshServer();
+	//Q_INVOKABLE void refreshServer();
 private:
+	void registerServer();
 	void loadServer();
 
 	Server *server;

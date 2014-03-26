@@ -9,16 +9,12 @@
 Server::Server(QString h, QString po, QString u, QString pa)
 	: host(h)
 	, port(po)
-	, user(u)
-	, pass(pa)
+	, username(u)
+	, password(pa)
 {}
 
-QString Server::username(){
-	return user;
-}
-
-QString Server::password(){
-	return pass;
+Server::~Server(){
+	//TODO: destroy what?
 }
 
 QString Server::url(){

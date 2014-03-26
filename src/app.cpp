@@ -19,15 +19,33 @@ App::App(QObject *parent)
 {
     // Initialize the data model before the UI is loaded
     // and built so its ready to be used.
+	registerServer();//TODO: getrid of this
     loadServer();
 
     QmlDocument *qml = QmlDocument::create("asset:///main.qml").parent(this);
-    qml->setContextProperty("_app", this);
+    qml->setContextProperty("_app", this);//TODO: what the FUCK is this?
     qml->setContextProperty("injection", this);
 
     AbstractPane *root = qml->createRootObject<AbstractPane>();
-    root->findChild<TextField*>("txtHost");
+    (root->findChild<TextField*>("txtHost"))->setText(server->host);
+    (root->findChild<TextField*>("txtPort"))->setText(server->port);
+    (root->findChild<TextField*>("txtUser"))->setText(server->username);
+    (root->findChild<TextField*>("txtPass"))->setText(server->password);
     Application::instance()->setScene(root);
+}
+
+App::~App(){
+	//TODO: destroy what?
+}
+
+void App::registerServer(){
+	//TODO: taken from user
+	QSettings settings(m_author, m_appName);
+	settings.setValue("host", "192.168.1.2");
+	settings.setValue("port", "8000");
+	settings.setValue("username", "nhut_le");
+	settings.setValue("password", "Jytcx4qr");
+	settings.sync();
 }
 
 void App::loadServer(){

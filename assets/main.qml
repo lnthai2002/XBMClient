@@ -34,14 +34,17 @@ Page {
         }
         TextField {
             id: txtPort
+            objectName: "txtPort"
             hintText: "XBMC listening port"
         }
         TextField {
             id: txtUser
+            objectName: "txtUser"
             hintText: "XBMC username"
         }
         TextField {
             id: txtPass
+            objectName: "txtPass"
             hintText: "XBMC password"
             inputMode: TextFieldInputMode.Password
         }

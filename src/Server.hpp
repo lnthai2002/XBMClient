@@ -8,18 +8,16 @@
 #ifndef SERVER_HPP_
 #define SERVER_HPP_
 
-class Server {
+class Server : public QObject{
+	Q_OBJECT;
 public:
 	Server(QString h, QString po, QString u, QString pa);
 	virtual ~Server();
 	QString url();
-	QString username();
-	QString password();
-private:
 	QString host;
 	QString port;
-	QString user;
-	QString pass;
+	QString username;
+	QString password;
 };
 
 

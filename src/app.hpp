@@ -10,6 +10,9 @@
 
 #include <QObject>
 #include <QString>
+#include <QPointer>
+#include <bb/system/InvokeRequest>
+#include <bb/system/InvokeManager>
 #include "Server.hpp"
 
 class App : public QObject
@@ -25,19 +28,17 @@ public:
 	// destroys the App object
 	~App();
 
-	// Creates a new person object and saves it.
-	//Q_INVOKABLE bool addServer(const QString &host, const QString &port, const QString &user, const QString &pass);
+public slots:
+	void onInvoke(const bb::system::InvokeRequest& invoke);
+	void sendUrlToYoutube();
 
-	// Update settings
-	//Q_INVOKABLE bool updateServer(const QString &host, const QString &port, const QString &user, const QString &pass);
-
-	//Q_INVOKABLE void refreshServer();
 private:
 	void registerServer();
-	void loadServer();
+	QPointer<Server> loadServer();
+	QString idFromUrl(QString &url);
 
-	Server *server;
-
+	bb::system::InvokeManager *invokeManager;
+	QPointer<Server> server;
 	// for creating settings
 	const QString m_author;
 	const QString m_appName;

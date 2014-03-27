@@ -31,22 +31,26 @@ Page {
             id: txtHost
             objectName: "txtHost"
             hintText: "XBMC host address"
+            text: server.host
         }
         TextField {
             id: txtPort
             objectName: "txtPort"
             hintText: "XBMC listening port"
+            text: server.port
         }
         TextField {
             id: txtUser
             objectName: "txtUser"
             hintText: "XBMC username"
+            text: server.username
         }
         TextField {
             id: txtPass
             objectName: "txtPass"
             hintText: "XBMC password"
             inputMode: TextFieldInputMode.Password
+            text: server.password
         }
         Label {
             id: lblUrl

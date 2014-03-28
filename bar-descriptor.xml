@@ -88,13 +88,27 @@
 
 	<invoke-target id="info.noip.darkportal.XBMCClient">
 		<invoke-target-type>application</invoke-target-type>
-		<invoke-target-name>XBMC Client</invoke-target-name>
+		<invoke-target-name>XBMC client</invoke-target-name>
 		<icon>
 			<image>assets/images/xbmc_81.png</image>
 			<image>assets/images/xbmc_358.png</image>
 		</icon>
 		<filter>
         	<action>bb.action.SHARE</action>
+			<mime-type>*</mime-type>
+	      	<property var="uris" value="http://m.youtube.com" />
+      	</filter>
+	</invoke-target>
+	
+	<invoke-target id="info.noip.darkportal.XBMCServer">
+		<invoke-target-type>application</invoke-target-type>
+		<invoke-target-name>XBMC Server</invoke-target-name>
+		<icon>
+			<image>assets/images/xbmc_81.png</image>
+			<image>assets/images/xbmc_358.png</image>
+		</icon>
+		<filter>
+        	<action>bb.action.OPEN</action>
 			<mime-type>*</mime-type>
 	      	<property var="uris" value="http://m.youtube.com" />
       	</filter>

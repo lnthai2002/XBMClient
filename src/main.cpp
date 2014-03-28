@@ -15,8 +15,6 @@
  */
 
 #include <bb/cascades/Application>
-#include <bb/system/InvokeManager>
-#include <bb/system/InvokeRequest>
 #include "app.hpp"
 
 using namespace bb::cascades;

@@ -63,7 +63,7 @@ Page {
         	}
             Button {
                 id: btnSave
-                objectName: "btnRegister"
+                objectName: "btnSave"
                 text: "Register"
                 layoutProperties: StackLayoutProperties {
                     spaceQuota: 5

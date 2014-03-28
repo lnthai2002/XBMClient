@@ -14,6 +14,7 @@
 #include <bb/system/InvokeRequest>
 #include <bb/system/InvokeManager>
 #include "Server.hpp"
+#include "InvokedApp.hpp"
 
 class App : public QObject
 {
@@ -22,28 +23,25 @@ class App : public QObject
     Q_OBJECT
 
 public:
-    // Creates a new App object
-	App(QObject *parent = 0);
+    static const QString m_author;
+    static const QString m_appName;
 
-	// destroys the App object
+	App(QObject *parent = 0);
 	~App();
 
 public slots:
 	void onInvoke(const bb::system::InvokeRequest& invoke);
-	void sendUrlToYoutube();
 
 private:
-	void registerServer();
+	bb::system::InvokeManager *invokeManager;
+	QPointer<InvokedApp> invokedApp;
+	QPointer<Server> server;
+
 	QPointer<Server> loadServer();
 	QString idFromUrl(QString &url);
 
-	bb::system::InvokeManager *invokeManager;
-	QPointer<Server> server;
-	// for creating settings
-	const QString m_author;
-	const QString m_appName;
+private slots:
+	void registerServer();
 };
-
-
 
 #endif /* APP_HPP_ */

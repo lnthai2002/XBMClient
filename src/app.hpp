@@ -38,8 +38,6 @@ private:
 	QPointer<Server> server;
 
 	QPointer<Server> loadServer();
-	QString idFromUrl(QString &url);
-
 private slots:
 	void registerServer();
 };

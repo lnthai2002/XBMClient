@@ -28,9 +28,8 @@ const QString App::m_appName= "XBMCClient";
 App::App(QObject *parent)
     : QObject(parent)
 	, invokeManager(new InvokeManager(this))
+	, server(loadServer())
 {
-	server = loadServer();
-
 	// If any Q_ASSERT statement(s) indicate that the slot failed to connect to
 	// the signal, make sure you know exactly why this has happened. This is not
 	// normal, and will cause your app to stop working!!
@@ -46,7 +45,7 @@ App::App(QObject *parent)
 
 	switch(invokeManager->startupMode()) {
 		case ApplicationStartupMode::LaunchApplication:
-		{	//Load UI layout
+		{	//TODO: what happened with those pointer created inisde a function? do i have to delete them manually?
 			QmlDocument *qml = QmlDocument::create("asset:///main.qml").parent(this);
 			qml->setContextProperty("server", server);
 
@@ -77,7 +76,6 @@ App::~App(){
 	//TODO: Whatever appear in constructor must be destroyed
 	delete server;
 	delete invokedApp;
-
 }
 
 void App::registerServer(){
@@ -92,7 +90,6 @@ void App::registerServer(){
 
 QPointer<Server> App::loadServer(){
 	//TODO: right now only support 1 server, only 1 setting set. Need to allow multiple server latter, with one active
-	// Get a handle on the settings object for this author and application.
 	QSettings settings(m_author, m_appName);
 	return new Server(settings.value("host").toString()
 						,settings.value("port").toString()
@@ -101,27 +98,5 @@ QPointer<Server> App::loadServer(){
 }
 
 void App::onInvoke(const bb::system::InvokeRequest& invoke){
-	invokedApp->playOnServer(invoke);
-}
-
-QString App::idFromUrl(QString &url){
-	url = "https://www.youtube.com/watch?v=2E21VJe9fqc";
-	QString id = "";
-	//QRegExp rx("^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#\&\?]*).*");
-	QRegExp rx("^?*v=?*");
-	rx.setPatternSyntax(QRegExp::Wildcard);
-
-	QStringList list;
-	int pos = 0;
-
-	qDebug() << "Hello";
-	qDebug() << rx.indexIn(url, 0);
-
-	while ((pos = rx.indexIn(url, pos)) != -1) {
-	 //list << rx.cap(1);
-		qDebug() << rx.cap(0);
-		qDebug() << rx.cap(1);
-	 pos += rx.matchedLength();
-	}
-	return id;
+	invokedApp->playOnServer(invoke.uri().toString());
 }

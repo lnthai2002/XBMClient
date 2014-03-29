@@ -8,10 +8,15 @@
 #ifndef INVOKEDAPP_HPP_
 #define INVOKEDAPP_HPP_
 
-#include <bb/system/InvokeRequest>
+#include <QByteArray>
+#include <QList>
 #include <QObject>
 #include <QString>
 #include <QPointer>
+#include <QSslError>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QNetworkRequest>
 #include "Server.hpp"
 
 class InvokedApp : public QObject
@@ -23,12 +28,23 @@ class InvokedApp : public QObject
 public:
 	InvokedApp(QPointer<Server> s);
 	~InvokedApp();
-	void playOnServer(const bb::system::InvokeRequest& invoke);
-
+	void playOnServer(const QString& url);
+	QString idFromUrl(const QString &url);
 private:
+	static const QString URLPATTERN;
 	QPointer<Server> server;
-
-	QString idFromUrl(QString &url);
+	QPointer<QNetworkAccessManager> netManager;
+	QPointer<QNetworkReply> netReply;
+	bool noError;
+	QByteArray clearList;
+	QByteArray addSong;
+	QByteArray openPlayer;
+private slots:
+	void slotError(QNetworkReply::NetworkError err);
+	void slotSslErrors(QList<QSslError> errs);
+	void onClearListFinished();
+	void onAddSongFinished();
+	void onOpenPlayerFinished();
 };
 
 

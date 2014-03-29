@@ -10,10 +10,10 @@
 #include <QString>
 class Server : public QObject{
 	Q_OBJECT;
-	Q_PROPERTY(QString host READ host NOTIFY valueChanged);
-	Q_PROPERTY(QString port READ port NOTIFY valueChanged);
-	Q_PROPERTY(QString username READ username NOTIFY valueChanged);
-	Q_PROPERTY(QString password READ password NOTIFY valueChanged);
+	Q_PROPERTY(QString host READ host WRITE setHost() NOTIFY valueChanged);
+	Q_PROPERTY(QString port READ port WRITE setPort() NOTIFY valueChanged);
+	Q_PROPERTY(QString username READ username WRITE setUsername() NOTIFY valueChanged);
+	Q_PROPERTY(QString password READ password WRITE setPassword() NOTIFY valueChanged);
 public:
 	Server(QString h, QString po, QString u, QString pa);
 	virtual ~Server();
@@ -22,6 +22,10 @@ public:
 	QString port();
 	QString username();
 	QString password();
+	void setHost(QString &h);
+	void setPort(QString &po);
+	void setUsername(QString &u);
+	void setPassword(QString &pa);
 signals:
 	void valueChanged(QString);
 

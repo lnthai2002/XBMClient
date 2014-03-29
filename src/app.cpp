@@ -87,10 +87,10 @@ App::~App(){
 void App::registerServer(){
 	//TODO: taken from user
 	QSettings settings(m_author, m_appName);
-	settings.setValue("host", "192.168.1.2");
-	settings.setValue("port", "8000");
-	settings.setValue("username", "nhut_le");
-	settings.setValue("password", "Jytcx4qr");
+	settings.setValue("host", server->host());
+	settings.setValue("port", server->port());
+	settings.setValue("username", server->username());
+	settings.setValue("password", server->password());
 	settings.sync();
 }
 

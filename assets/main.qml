@@ -32,19 +32,27 @@ Page {
             objectName: "txtHost"
             hintText: "XBMC host address"
             text: server.host
-            
+            onTextChanged: {
+                server.host = text;
+            }
         }
         TextField {
             id: txtPort
             objectName: "txtPort"
             hintText: "XBMC listening port"
             text: server.port
+            onTextChanged: {
+                server.port = text;
+            }
         }
         TextField {
             id: txtUser
             objectName: "txtUser"
             hintText: "XBMC username"
             text: server.username
+            onTextChanged: {
+                server.username = text;
+            }
         }
         TextField {
             id: txtPass
@@ -52,6 +60,9 @@ Page {
             hintText: "XBMC password"
             inputMode: TextFieldInputMode.Password
             text: server.password
+            onTextChanged: {
+                server.password = text;
+            }
         }
         Label {
             id: lblUrl

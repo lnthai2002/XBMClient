@@ -12,6 +12,7 @@
 #include <bb/cascades/TextField>
 #include <bb/data/JsonDataAccess>
 #include <bb/system/ApplicationStartupMode>
+#include <bb/system/CardDoneMessage>
 #include <QHash>
 #include <QSettings>
 #include <QNetworkAccessManager>
@@ -65,6 +66,11 @@ App::App(QObject *parent)
 			invokedApp = new InvokedApp(server);
 			break;
 		}
+		case ApplicationStartupMode::InvokeCard:
+		{
+			invokedApp = new InvokedApp(server);
+			break;
+		}
 		default:
 		{	// What app is it and how did it get here?
 			break;
@@ -99,4 +105,11 @@ QPointer<Server> App::loadServer(){
 
 void App::onInvoke(const bb::system::InvokeRequest& invoke){
 	invokedApp->playOnServer(invoke.uri().toString());
+
+	// close card
+	CardDoneMessage message;
+	message.setData(tr("Card: I am done. yay!"));
+	message.setDataType("text/plain");
+	message.setReason(tr("Success!"));
+	invokeManager->sendCardDone(message);
 }

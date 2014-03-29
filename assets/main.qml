@@ -32,6 +32,7 @@ Page {
             objectName: "txtHost"
             hintText: "XBMC host address"
             text: server.host
+            
         }
         TextField {
             id: txtPort
@@ -71,18 +72,6 @@ Page {
                 verticalAlignment: VerticalAlignment.Top
                 horizontalAlignment: HorizontalAlignment.Left
             }
-            Button {
-                id: btnSend
-                objectName: "btnSend"
-                text: "Send"
-                layoutProperties: StackLayoutProperties {
-                    spaceQuota: 5.0
-                }
-                verticalAlignment: VerticalAlignment.Top
-                horizontalAlignment: HorizontalAlignment.Right
-                accessibility.name: "btnSend"
-            
-            }	
         }
 
     }

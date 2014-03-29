@@ -101,7 +101,7 @@
 	</invoke-target>
 	
 	<invoke-target id="info.noip.darkportal.XBMCServer">
-		<invoke-target-type>application</invoke-target-type>
+		<invoke-target-type>card.previewer</invoke-target-type>
 		<invoke-target-name>XBMC Server</invoke-target-name>
 		<icon>
 			<image>assets/images/xbmc_81.png</image>

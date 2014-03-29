@@ -33,7 +33,7 @@ public slots:
 	void onInvoke(const bb::system::InvokeRequest& invoke);
 
 private:
-	bb::system::InvokeManager *invokeManager;
+	QPointer<bb::system::InvokeManager> invokeManager;
 	QPointer<InvokedApp> invokedApp;
 	QPointer<Server> server;
 

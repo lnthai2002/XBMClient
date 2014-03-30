@@ -27,6 +27,19 @@ Page {
         bottomPadding: 20.0
         leftPadding: 20.0
         rightPadding: 20.0
+
+        RadioGroup {
+        	//servers.each
+        }
+        TextField {
+            id: txtName
+            objectName: "txtName"
+            hintText: "XBMC friendly name"
+            text: server.name
+            onTextChanged: {
+                server.name = text;
+            }
+        }
         TextField {
             id: txtHost
             objectName: "txtHost"

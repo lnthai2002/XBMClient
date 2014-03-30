@@ -19,8 +19,11 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QRegExp>
+#include <QVariant>
 using namespace bb::cascades;
 using namespace bb::system;
+
+Q_DECLARE_METATYPE(QList<Server>)
 
 // Static constants used for storing Settings
 const QString App::m_author = "Nhut Thai Le";
@@ -86,11 +89,28 @@ App::~App(){
 
 void App::registerServer(){
 	//TODO: taken from user
+
 	QSettings settings(m_author, m_appName);
+	QHash<QString, QString> serv;
+	serv["name"] = "darkportal";
+	serv["host"] = "192.168.1.2";
+	serv["username"] = "nhut_le";
+	serv["password"] = "Jytcx4qr";
+
+	//QHash<QString, QVariant> servers;//settings.value("servers").toHash();
+	//servers[serv["name"]] = QVariant::fromValue(serv);
+
+	//servers.insert(server->name(), QVariant(server));
+
+	QList<Server> servers;
+	servers.push_front(*server);
+	settings.setValue("servers", QVariant::fromValue(servers));
+	/*
 	settings.setValue("host", server->host());
 	settings.setValue("port", server->port());
 	settings.setValue("username", server->username());
 	settings.setValue("password", server->password());
+	*/
 	settings.sync();
 }
 

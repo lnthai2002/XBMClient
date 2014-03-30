@@ -21,6 +21,14 @@ QString Server::json_url(){
 	return ("http://"+ username_ + ":" + password_ + "@" + host_ + ":" + port_ + "/jsonrpc");
 }
 
+QString Server::name(){
+	return name_;
+}
+
+void Server::setName(QString &n){
+	name_ = n;
+}
+
 QString Server::host(){
 	return host_;
 }

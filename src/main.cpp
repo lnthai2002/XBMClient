@@ -16,13 +16,14 @@
 
 #include <bb/cascades/Application>
 #include "app.hpp"
-
 using namespace bb::cascades;
 
 Q_DECL_EXPORT int main(int argc, char **argv)
 {
 	Application app(argc, argv);
-    // Create the Application object
+
+	//qRegisterMetaType<Server>("Server");
+	// Create the Application object
 	new App(&app);
 
     // Enter the application main event loop.

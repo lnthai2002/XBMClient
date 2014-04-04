@@ -1,6 +1,9 @@
 1
-4
+7
 images/xbmc_81.png
 images/xbmc_114.png
 images/xbmc_358.png
+card.qml
 main.qml
+JSON/getPlaylists.json
+JSON/getActivePlayers.json

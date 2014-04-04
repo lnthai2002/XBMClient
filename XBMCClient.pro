@@ -1,7 +1,7 @@
 APP_NAME = XBMCClient
 
 CONFIG += qt warn_on cascades10
-LIBS += -lbbsystem
+LIBS += -lbbsystem -lbbdata
 
 QT += network 
 

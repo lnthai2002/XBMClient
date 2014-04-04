@@ -104,12 +104,15 @@ QPointer<Server> App::loadServer(){
 }
 
 void App::onInvoke(const bb::system::InvokeRequest& invoke){
+	invokedApp->initUI();
 	invokedApp->playOnServer(invoke.uri().toString());
 
+	/*
 	// close card
 	CardDoneMessage message;
 	message.setData(tr("Card: I am done. yay!"));
 	message.setDataType("text/plain");
 	message.setReason(tr("Success!"));
 	invokeManager->sendCardDone(message);
+	*/
 }

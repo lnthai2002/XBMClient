@@ -17,7 +17,12 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <bb/cascades/AbstractPane>
+#include <bb/data/JsonDataAccess>
 #include "Server.hpp"
+
+using namespace bb::cascades;
+using namespace bb::data;
 
 class InvokedApp : public QObject
 {
@@ -28,23 +33,28 @@ class InvokedApp : public QObject
 public:
 	InvokedApp(QPointer<Server> s);
 	~InvokedApp();
+	void initUI();
 	void playOnServer(const QString& url);
 	QString idFromUrl(const QString &url);
 private:
 	static const QString URLPATTERN;
 	QPointer<Server> server;
 	QPointer<QNetworkAccessManager> netManager;
-	QPointer<QNetworkReply> netReply;
-	bool noError;
-	QByteArray clearList;
-	QByteArray addSong;
-	QByteArray openPlayer;
+	QString vidId;
+	AbstractPane *root;
+	JsonDataAccess jda;
+
+	void getActivePlayers();
+	void clearPlaylist();
+	void queueItem(QString &listId);
+	void openPlayer();
 private slots:
+	void onGetActivePlayersFinished();
+	void onClearListFinished();
+	void onQueueItemFinished();
+	void onOpenPlayerFinished();
 	void slotError(QNetworkReply::NetworkError err);
 	void slotSslErrors(QList<QSslError> errs);
-	void onClearListFinished();
-	void onAddSongFinished();
-	void onOpenPlayerFinished();
 };
 
 

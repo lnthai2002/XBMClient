@@ -31,10 +31,11 @@ NavigationPane {
             Label {
                 id: lblMsg
                 objectName: "lblMsg"
-                text: "sending command to XBMC..."
             }
 
             RadioGroup {
+                id: rdgActions
+                objectName: "rdgActions"
                 Option {
                     text: "Play in new playlist"
 

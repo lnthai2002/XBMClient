@@ -19,6 +19,7 @@
 #include <QNetworkRequest>
 #include <bb/cascades/AbstractPane>
 #include <bb/cascades/Label>
+#include <bb/cascades/Option>
 #include <bb/data/JsonDataAccess>
 #include <bb/system/InvokeManager>
 #include "Server.hpp"
@@ -54,7 +55,7 @@ private:
 	void queueItem(QString &listId);
 	void openPlayer();
 private slots:
-	void dispatch();
+	void dispatch(bb::cascades::Option* selectedOptions);
 	void onGetActivePlayersFinished();
 	void onClearListFinished();
 	void onQueueItemFinished();

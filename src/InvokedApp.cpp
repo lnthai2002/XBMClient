@@ -21,7 +21,6 @@
 #include <bb/cascades/Application>
 #include <bb/cascades/QmlDocument>
 #include <bb/cascades/RadioGroup>
-#include <bb/cascades/Option>
 #include <bb/system/CardDoneMessage>
 
 //static constant
@@ -42,7 +41,6 @@ InvokedApp::~InvokedApp(){
 
 void InvokedApp::initUI(){
 	QmlDocument *qml = QmlDocument::create("asset:///card.qml").parent(this);
-	//qml->setContextProperty("server", server);
 
 	root = qml->createRootObject<AbstractPane>();
 	Application::instance()->setScene(root);
@@ -50,7 +48,7 @@ void InvokedApp::initUI(){
 	lblMsg = root->findChild<Label*>("lblMsg");
 	RadioGroup *rdgActions = root->findChild<RadioGroup*>("rdgActions");
 	bool ok = QObject::connect(rdgActions, SIGNAL(selectedOptionChanged(bb::cascades::Option*)),
-								this, SLOT(dispatch()));
+								this, SLOT(dispatch(bb::cascades::Option*)));
 	Q_ASSERT(ok);
 }
 
@@ -122,32 +120,36 @@ void InvokedApp::onGetActivePlayersFinished(){
 
 		QList<QVariant> activePlayers = rep.value<QVariantMap>()["result"].toList();
 
+		RadioGroup *rdgActions = root->findChild<RadioGroup*>("rdgActions");
 		bool ready = true;
 		if (activePlayers.isEmpty()){ //check for blank
 			qDebug() << "no active player";
 			lblMsg->setText("Nothing is playing on XBMC at the moment!");
-			clearPlaylist();
+			rdgActions->add(Option::create()
+							.objectName("optPlayNow")
+							.text("play now"));
 		}else{
 			QString currentPlayer;
 			for(int i = 0; i < activePlayers.size(); i++){
 				QMap<QString,QVariant> player = activePlayers.at(i).toMap();
 				if (player["type"].value<QString>().compare("video") == 0){
 					qDebug() << "there is a video playing";
-					lblMsg->setText("XBMC is playing a video, do you want to ..");
 					ready = false;
-					/*
-					//TODO: ask user if he want to replace the current video with the new one or queue
-					RadioGroup *rdgAction = root->findChild<RadioGroup*>("rdgAction");
-					Option *optPlayNow = Option::create();
-					optPlayNow->setText("Start playing");
-					rdgAction->add(optPlayNow);
-					*/
+					lblMsg->setText("XBMC is playing video, do you want to ..");
+					rdgActions->add(Option::create()
+									.objectName("optPlayNow")
+									.text("stop and play this"));
+					rdgActions->add(Option::create()
+									.objectName("optQueue")
+									.text("queue this"));
 					break;
 				}else if(player["type"].value<QString>().compare("audio") == 0){
 					qDebug() << "there is an audio playing";
-					lblMsg->setText("XBMC is playing a audio file, do you want to ..");
 					ready = false;
-					//TODO: ask user if he want to replace the current audio with the youtube
+					lblMsg->setText("XBMC is playing audio, do you want to ..");
+					rdgActions->add(Option::create()
+									.objectName("optPlayNow")
+									.text("stop and play this"));
 					break;
 				}else{
 					currentPlayer = player["type"].value<QString>();
@@ -155,10 +157,17 @@ void InvokedApp::onGetActivePlayersFinished(){
 				}
 			}
 			if (ready){ //there is something playing, but not audio or video
-				lblMsg->setText("XBMC is playing" + currentPlayer + ", do you want to ..");
-				//TODO: ask user if he want to play
+				qDebug() << currentPlayer << " is playing";
+				ready = false;
+				lblMsg->setText("XBMC is playing " + currentPlayer + ", do you want to ..");
+				rdgActions->add(Option::create()
+								.objectName("optPlayNow")
+								.text("stop and play this"));
 			}
 		}
+		rdgActions->add(Option::create()
+						.objectName("optCancel")
+						.text("leave it as is"));
 	}
 	else{
 		qDebug() << "Error in getting playlists: " << response->readAll();
@@ -166,9 +175,15 @@ void InvokedApp::onGetActivePlayersFinished(){
 	response->deleteLater();
 }
 
-void InvokedApp::dispatch(){
+void InvokedApp::dispatch(bb::cascades::Option* selectedOption){
 	qDebug() << "options selected";
 
+	if (selectedOption->objectName() == "optPlayNow"){
+		clearPlaylist();
+	}else if(selectedOption->objectName() == "optQueue"){
+		QString l = "1";
+		queueItem(l);
+	}
 	// close card
 	CardDoneMessage message;
 	message.setData(tr("Card: I am done. yay!"));

@@ -36,14 +36,6 @@ NavigationPane {
             RadioGroup {
                 id: rdgActions
                 objectName: "rdgActions"
-                Option {
-                    text: "Play in new playlist"
-
-                }
-                Option {
-                    text: "Queue in current playlist"
-
-                }
             }
             Container {
                 layout: StackLayout {

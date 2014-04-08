@@ -23,6 +23,7 @@
 #include <bb/data/JsonDataAccess>
 #include <bb/system/InvokeManager>
 #include "Server.hpp"
+#include "Promise.hpp"
 
 using namespace bb::cascades;
 using namespace bb::data;
@@ -50,10 +51,10 @@ private:
 	Label *lblMsg;
 	JsonDataAccess jda;
 
-	void getActivePlayers();
-	void clearPlaylist();
-	void queueItem(QString &listId);
-	void openPlayer();
+	Promise * getActivePlayers();
+	Promise * clearPlaylist();
+	Promise * queueItem(QString &listId);
+	Promise * openPlayer();
 private slots:
 	void dispatch(bb::cascades::Option* selectedOptions);
 	void onGetActivePlayersFinished();

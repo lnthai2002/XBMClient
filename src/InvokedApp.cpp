@@ -52,6 +52,41 @@ void InvokedApp::initUI(){
 	Q_ASSERT(ok);
 }
 
+void InvokedApp::dispatch(bb::cascades::Option* selectedOption){
+	Promise * request;
+	if (selectedOption->objectName() == "optPlayNow"){
+		request = clearPlaylist();
+		QObject::connect(request, SIGNAL(finished()), this, [&]()
+		{
+			// close card
+			CardDoneMessage message;
+			message.setData(tr("Card: I am done. yay!"));
+			message.setDataType("text/plain");
+			message.setReason(tr("Success!"));
+			invokeManager->sendCardDone(message);
+		});
+	}else if(selectedOption->objectName() == "optQueue"){
+		QString l = "1";
+		request = queueItem(l);
+		QObject::connect(request, SIGNAL(finished()), this, [&]()
+		{
+			// close card
+			CardDoneMessage message;
+			message.setData(tr("Card: I am done. yay!"));
+			message.setDataType("text/plain");
+			message.setReason(tr("Success!"));
+			invokeManager->sendCardDone(message);
+		});
+	}else{
+		// close card
+		CardDoneMessage message;
+		message.setData(tr("Card: I am done. yay!"));
+		message.setDataType("text/plain");
+		message.setReason(tr("Success!"));
+		invokeManager->sendCardDone(message);
+	}
+}
+
 QString InvokedApp::idFromUrl(const QString &url){
 	QRegExp rx(URLPATTERN);
 	rx.setPatternSyntax(QRegExp::RegExp2);
@@ -88,12 +123,13 @@ void InvokedApp::playOnServer(const QString &url){
 	//TODO: load waiting screen
 }
 
-void InvokedApp::getActivePlayers(){
+Promise * InvokedApp::getActivePlayers(){
 	QVariant activePlayersQuery = jda.load(QDir::currentPath() + "/app/native/assets/JSON/getActivePlayers.json");
 
 	if (jda.hasError()){
 		qDebug() << "got error: " << jda.error().errorMessage();
 		//TODO: raise exception
+		return NULL;
 	} else {
 		QNetworkRequest request;
 		request.setUrl(QUrl(server->json_url()));
@@ -108,6 +144,13 @@ void InvokedApp::getActivePlayers(){
 									this, SLOT(onGetActivePlayersFinished()));
 		Q_ASSERT(res);
 		delete activePlayersQueryByteArray;
+
+		Promise * promise = new Promise;
+
+		// When the request finishes (or is aborted), indicate that the promise completed
+		QObject::connect(response, SIGNAL(QNetworkReply::finished()), promise, SIGNAL(Promise::finished()));
+
+		return promise;
 	}
 }
 
@@ -175,25 +218,8 @@ void InvokedApp::onGetActivePlayersFinished(){
 	response->deleteLater();
 }
 
-void InvokedApp::dispatch(bb::cascades::Option* selectedOption){
-	qDebug() << "options selected";
-
-	if (selectedOption->objectName() == "optPlayNow"){
-		clearPlaylist();
-	}else if(selectedOption->objectName() == "optQueue"){
-		QString l = "1";
-		queueItem(l);
-	}
-	// close card
-	CardDoneMessage message;
-	message.setData(tr("Card: I am done. yay!"));
-	message.setDataType("text/plain");
-	message.setReason(tr("Success!"));
-	invokeManager->sendCardDone(message);
-}
-
 //Clear playlist 1
-void InvokedApp::clearPlaylist(){
+Promise * InvokedApp::clearPlaylist(){
 	QByteArray clearList = "{\"jsonrpc\": \"2.0\", \"method\": \"Playlist.Clear\", \"params\":{\"playlistid\":1}, \"id\": 1}";
 
 	QNetworkRequest request;
@@ -207,6 +233,12 @@ void InvokedApp::clearPlaylist(){
 	res = QObject::connect(response, SIGNAL(finished()),
 						this, SLOT(onClearListFinished()));
 	Q_ASSERT(res);
+
+	Promise * promise = new Promise;
+	// When the request finishes (or is aborted), indicate that the promise completed
+	QObject::connect(response, SIGNAL(finished()), promise, SIGNAL(finished()));
+
+	return promise;
 }
 
 void InvokedApp::onClearListFinished(){
@@ -232,9 +264,10 @@ void InvokedApp::onClearListFinished(){
 }
 
 //Add to playlist 1
-void InvokedApp::queueItem(QString &listId){
+Promise * InvokedApp::queueItem(QString &listId){
 	//TODO: use jsonDataAccess to construct the request
-	QByteArray addSong = "{\"jsonrpc\": \"2.0\", \"method\": \"Playlist.Add\", \"params\":{\"playlistid\":1, \"item\" :{ \"file\" : \"plugin://plugin.video.youtube/?action=play_video&videoid=";
+	//QByteArray addSong = "{\"jsonrpc\": \"2.0\", \"method\": \"Playlist.Add\", \"params\":{\"playlistid\":1, \"item\" :{ \"file\" : \"plugin://plugin.video.youtube/?action=play_video&videoid=";
+	QByteArray addSong = "{\"jsonrpc\": \"2.0\", \"method\": \"Playlist.Insert\", \"params\":{\"playlistid\":1, \"position\":1, \"item\" :{ \"file\" : \"plugin://plugin.video.youtube/?action=play_video&videoid=";
 	addSong.append(vidId);
 	addSong.append("\"}}, \"id\" : 1}");
 
@@ -248,6 +281,12 @@ void InvokedApp::queueItem(QString &listId){
 	res = connect(response, SIGNAL(finished()),
 				  this, SLOT(onQueueItemFinished()));
 	Q_ASSERT(res);
+
+	Promise * promise = new Promise;
+	// When the request finishes (or is aborted), indicate that the promise completed
+	QObject::connect(response, SIGNAL(finished()), promise, SIGNAL(finished()));
+
+	return promise;
 }
 
 void InvokedApp::onQueueItemFinished(){
@@ -271,7 +310,7 @@ void InvokedApp::onQueueItemFinished(){
 }
 
 //open player and start playing list 1
-void InvokedApp::openPlayer(){
+Promise * InvokedApp::openPlayer(){
 	QByteArray openPlayer = "{\"jsonrpc\": \"2.0\", \"method\": \"Player.Open\", \"params\":{\"item\":{\"playlistid\":1, \"position\" : 0}}, \"id\": 1}";
 
 	QNetworkRequest request;
@@ -284,6 +323,12 @@ void InvokedApp::openPlayer(){
 	res = connect(response, SIGNAL(finished()),
 			this, SLOT(onOpenPlayerFinished()));
 	Q_ASSERT(res);
+
+	Promise * promise = new Promise;
+	// When the request finishes (or is aborted), indicate that the promise completed
+	QObject::connect(response, SIGNAL(finished()), promise, SIGNAL(finished()));
+
+	return promise;
 }
 
 void InvokedApp::onOpenPlayerFinished(){

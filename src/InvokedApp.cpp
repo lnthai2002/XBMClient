@@ -50,6 +50,217 @@ void InvokedApp::initUI(){
 	Q_ASSERT(ok);
 }
 
+void InvokedApp::playOnServer(const QString &url){
+	vidId = idFromUrl(url);
+	getActivePlayers();
+
+	//TODO: load waiting screen
+}
+
+void InvokedApp::getActivePlayers(){
+	QVariant activePlayersQuery = jda.load(QDir::currentPath() + "/app/native/assets/JSON/getActivePlayers.json");
+
+	if (jda.hasError()){
+		qDebug() << "got error: " << jda.error().errorMessage();
+		lblMsg->setText("App is corrupted, please reinstall");
+		emit finished();
+	} else {
+		QNetworkRequest request;
+		request.setUrl(QUrl(server->json_url()));
+		request.setRawHeader("Content-Type", "application/json");
+
+		QByteArray *activePlayersQueryByteArray = new QByteArray();
+		jda.saveToBuffer(activePlayersQuery, activePlayersQueryByteArray);
+
+		QPointer<QNetworkReply> response = netManager->post(request, *activePlayersQueryByteArray);
+
+		bool ok = QObject::connect(response, SIGNAL(finished()),
+									this, SLOT(onGetActivePlayersFinished()));
+		Q_ASSERT(ok);
+		delete activePlayersQueryByteArray;
+	}
+}
+
+void InvokedApp::onGetActivePlayersFinished(){
+	QNetworkReply *response = qobject_cast<QNetworkReply *>(sender());
+	if (response != NULL &&	response->bytesAvailable() > 0 &&
+		response->error() == QNetworkReply::NoError)
+	{
+		QVariant rep = jda.loadFromBuffer(response->readAll());
+
+		QList<QVariant> activePlayers = rep.value<QVariantMap>()["result"].toList();
+
+		RadioGroup *rdgActions = root->findChild<RadioGroup*>("rdgActions");
+		bool free = true;
+		if (activePlayers.isEmpty()){ //check for blank
+			qDebug() << "no active player";
+			lblMsg->setText("Nothing is playing on XBMC at the moment!");
+			rdgActions->add(Option::create()
+							.objectName("optPlayNow")
+							.text("play now"));
+		}else{
+			QString currentPlayer;
+			for(int i = 0; i < activePlayers.size(); i++){
+				QMap<QString,QVariant> player = activePlayers.at(i).toMap();
+				if (player["type"].value<QString>().compare("video") == 0){
+					qDebug() << "there is a video playing";
+					free = false;
+					lblMsg->setText("XBMC is playing video, do you want to ..");
+					rdgActions->add(Option::create()
+									.objectName("optPlayNow")
+									.text("stop and play this"));
+					rdgActions->add(Option::create()
+									.objectName("optQueue")
+									.text("queue this"));
+					break;
+				}else if(player["type"].value<QString>().compare("audio") == 0){
+					qDebug() << "there is an audio playing";
+					free = false;
+					lblMsg->setText("XBMC is playing audio, do you want to ..");
+					rdgActions->add(Option::create()
+									.objectName("optPlayNow")
+									.text("stop and play this"));
+					break;
+				}else{
+					currentPlayer = player["type"].value<QString>();
+					break;
+				}
+			}
+			if (free){ //there is something playing, but not audio or video
+				qDebug() << currentPlayer << " is playing";
+				lblMsg->setText("XBMC is playing " + currentPlayer + ", do you want to ..");
+				rdgActions->add(Option::create()
+								.objectName("optPlayNow")
+								.text("stop and play this"));
+			}
+		}
+		rdgActions->add(Option::create()
+						.objectName("optCancel")
+						.text("leave it as is"));
+	} else {
+		qDebug() << "Error in getting playlists: " << response->readAll();
+	}
+	response->deleteLater();
+}
+
+void InvokedApp::dispatch(bb::cascades::Option* selectedOption){
+	if (selectedOption->objectName() == "optPlayNow"){
+		clearPlaylist();
+		bool ok = QObject::connect(this, SIGNAL(clearListFinished()),
+								this, SLOT(queueItem()));
+		Q_ASSERT(ok);
+		ok = QObject::connect(this, SIGNAL(queueItemFinished()),
+							this, SLOT(openPlayer()));
+		Q_ASSERT(ok);
+	}else if(selectedOption->objectName() == "optQueue"){
+		queueItem();
+	}
+	emit finished();
+}
+
+//Clear playlist 1
+void InvokedApp::clearPlaylist(){
+	QByteArray clearList = "{\"jsonrpc\": \"2.0\", \"method\": \"Playlist.Clear\", \"params\":{\"playlistid\":1}, \"id\": 1}";
+
+	QNetworkRequest request;
+	request.setUrl(QUrl(server->json_url()));
+	request.setRawHeader("Content-Type", "application/json");
+
+	QPointer<QNetworkReply> response = netManager->post(request, clearList);
+	bool ok = QObject::connect(response, SIGNAL(finished()),
+						this, SLOT(onClearListFinished()));
+	Q_ASSERT(ok);
+}
+
+void InvokedApp::onClearListFinished(){
+	QNetworkReply *response = qobject_cast<QNetworkReply *>(sender());
+
+	if (response != NULL &&	response->bytesAvailable() > 0 &&
+		response->error() == QNetworkReply::NoError)
+	{
+		//use handle for addSong instead of handle for clearList
+		bool res;
+		Q_UNUSED(res);
+		res = disconnect(response, SIGNAL(finished()),
+			             this, SLOT(onClearListFinished()));
+		Q_ASSERT(res);
+		emit clearListFinished();
+	} else {
+		qDebug() << "In onClearListFinished error";
+		lblMsg->setText("Error occurred while clearing playlist ..");
+		qDebug() << response->readAll();
+		emit clearListError();
+	}
+	response->deleteLater();
+}
+
+//Add to playlist 1
+void InvokedApp::queueItem(){
+	//TODO: use jsonDataAccess to construct the request
+	QByteArray addSong = "{\"jsonrpc\": \"2.0\", \"method\": \"Playlist.Add\", \"params\":{\"playlistid\":1, \"item\" :{ \"file\" : \"plugin://plugin.video.youtube/?action=play_video&videoid=";
+	addSong.append(vidId);
+	addSong.append("\"}}, \"id\" : 1}");
+
+	QNetworkRequest request;
+	request.setUrl(QUrl(server->json_url()));
+	request.setRawHeader("Content-Type", "application/json");
+
+	QPointer<QNetworkReply> response = netManager->post(request, addSong);
+	bool res = connect(response, SIGNAL(finished()),
+				  this, SLOT(onQueueItemFinished()));
+	Q_ASSERT(res);
+}
+
+void InvokedApp::onQueueItemFinished(){
+	QNetworkReply *response = qobject_cast<QNetworkReply *>(sender());
+
+	if (response != NULL &&	response->bytesAvailable() > 0 &&
+		response->error() == QNetworkReply::NoError)
+	{
+		bool res;
+		Q_UNUSED(res);
+		res = disconnect(response, SIGNAL(finished()),
+						this, SLOT(onQueueItemFinished()));
+		Q_ASSERT(res);
+		emit queueItemFinished();
+	} else {
+		qDebug() << "In onAddSongFinished error";
+		lblMsg->setText("Error occurred while adding item to playlist ..");
+		qDebug() << response->readAll();
+		emit queueItemError();
+	}
+	response->deleteLater();
+}
+
+//open player and start playing list 1
+void InvokedApp::openPlayer(){
+	QByteArray openPlayer = "{\"jsonrpc\": \"2.0\", \"method\": \"Player.Open\", \"params\":{\"item\":{\"playlistid\":1, \"position\" : 0}}, \"id\": 1}";
+
+	QNetworkRequest request;
+	request.setUrl(QUrl(server->json_url()));
+	request.setRawHeader("Content-Type", "application/json");
+
+	QPointer<QNetworkReply> response = netManager->post(request, openPlayer);
+	bool res = connect(response, SIGNAL(finished()),
+			this, SLOT(onOpenPlayerFinished()));
+	Q_ASSERT(res);
+}
+
+void InvokedApp::onOpenPlayerFinished(){
+	QNetworkReply *response = qobject_cast<QNetworkReply *>(sender());
+	if (response != NULL &&	response->bytesAvailable() > 0 &&
+		response->error() == QNetworkReply::NoError)
+	{
+		emit finished();
+	} else {
+		qDebug() << "In onOpenPlayerFinished error";
+		lblMsg->setText("Error occurred while starting playlist ..");
+		qDebug() << response->readAll();
+		emit openPlayerError();
+	}
+	response->deleteLater();
+}
+
 QString InvokedApp::idFromUrl(const QString &url){
 	QRegExp rx(URLPATTERN);
 	rx.setPatternSyntax(QRegExp::RegExp2);
@@ -77,220 +288,6 @@ QString InvokedApp::idFromUrl(const QString &url){
 	}
 */
 	return rx.cap(1);
-}
-
-void InvokedApp::playOnServer(const QString &url){
-	vidId = idFromUrl(url);
-	getActivePlayers();
-
-	//TODO: load waiting screen
-}
-
-void InvokedApp::getActivePlayers(){
-	QVariant activePlayersQuery = jda.load(QDir::currentPath() + "/app/native/assets/JSON/getActivePlayers.json");
-
-	if (jda.hasError()){
-		qDebug() << "got error: " << jda.error().errorMessage();
-		//TODO: raise exception
-	} else {
-		QNetworkRequest request;
-		request.setUrl(QUrl(server->json_url()));
-		request.setRawHeader("Content-Type", "application/json");
-
-		QByteArray *activePlayersQueryByteArray = new QByteArray();
-		jda.saveToBuffer(activePlayersQuery, activePlayersQueryByteArray);
-
-		QPointer<QNetworkReply> response = netManager->post(request, *activePlayersQueryByteArray);
-
-		bool res = QObject::connect(response, SIGNAL(finished()),
-									this, SLOT(onGetActivePlayersFinished()));
-		Q_ASSERT(res);
-		delete activePlayersQueryByteArray;
-	}
-}
-
-void InvokedApp::onGetActivePlayersFinished(){
-	QNetworkReply *response = qobject_cast<QNetworkReply *>(sender());
-	if (response != NULL &&	response->bytesAvailable() > 0 &&
-		response->error() == QNetworkReply::NoError)
-	{
-		QVariant rep = jda.loadFromBuffer(response->readAll());
-
-		QList<QVariant> activePlayers = rep.value<QVariantMap>()["result"].toList();
-
-		RadioGroup *rdgActions = root->findChild<RadioGroup*>("rdgActions");
-		bool ready = true;
-		if (activePlayers.isEmpty()){ //check for blank
-			qDebug() << "no active player";
-			lblMsg->setText("Nothing is playing on XBMC at the moment!");
-			rdgActions->add(Option::create()
-							.objectName("optPlayNow")
-							.text("play now"));
-		}else{
-			QString currentPlayer;
-			for(int i = 0; i < activePlayers.size(); i++){
-				QMap<QString,QVariant> player = activePlayers.at(i).toMap();
-				if (player["type"].value<QString>().compare("video") == 0){
-					qDebug() << "there is a video playing";
-					ready = false;
-					lblMsg->setText("XBMC is playing video, do you want to ..");
-					rdgActions->add(Option::create()
-									.objectName("optPlayNow")
-									.text("stop and play this"));
-					rdgActions->add(Option::create()
-									.objectName("optQueue")
-									.text("queue this"));
-					break;
-				}else if(player["type"].value<QString>().compare("audio") == 0){
-					qDebug() << "there is an audio playing";
-					ready = false;
-					lblMsg->setText("XBMC is playing audio, do you want to ..");
-					rdgActions->add(Option::create()
-									.objectName("optPlayNow")
-									.text("stop and play this"));
-					break;
-				}else{
-					currentPlayer = player["type"].value<QString>();
-					break;
-				}
-			}
-			if (ready){ //there is something playing, but not audio or video
-				qDebug() << currentPlayer << " is playing";
-				ready = false;
-				lblMsg->setText("XBMC is playing " + currentPlayer + ", do you want to ..");
-				rdgActions->add(Option::create()
-								.objectName("optPlayNow")
-								.text("stop and play this"));
-			}
-		}
-		rdgActions->add(Option::create()
-						.objectName("optCancel")
-						.text("leave it as is"));
-	}
-	else{
-		qDebug() << "Error in getting playlists: " << response->readAll();
-	}
-	response->deleteLater();
-}
-
-void InvokedApp::dispatch(bb::cascades::Option* selectedOption){
-	qDebug() << "options selected";
-
-	if (selectedOption->objectName() == "optPlayNow"){
-		clearPlaylist();
-	}else if(selectedOption->objectName() == "optQueue"){
-		QString l = "1";
-		queueItem(l);
-	}
-	emit finished();
-}
-
-//Clear playlist 1
-void InvokedApp::clearPlaylist(){
-	QByteArray clearList = "{\"jsonrpc\": \"2.0\", \"method\": \"Playlist.Clear\", \"params\":{\"playlistid\":1}, \"id\": 1}";
-
-	QNetworkRequest request;
-	request.setUrl(QUrl(server->json_url()));
-	request.setRawHeader("Content-Type", "application/json");
-
-	bool res;
-	Q_UNUSED(res);
-
-	QPointer<QNetworkReply> response = netManager->post(request, clearList);
-	res = QObject::connect(response, SIGNAL(finished()),
-						this, SLOT(onClearListFinished()));
-	Q_ASSERT(res);
-}
-
-void InvokedApp::onClearListFinished(){
-	QNetworkReply *response = qobject_cast<QNetworkReply *>(sender());
-
-	if (response != NULL &&	response->bytesAvailable() > 0 &&
-		response->error() == QNetworkReply::NoError)
-	{
-		//use handle for addSong instead of handle for clearList
-		bool res;
-		Q_UNUSED(res);
-		res = disconnect(response, SIGNAL(finished()),
-			             this, SLOT(onClearListFinished()));
-		Q_ASSERT(res);
-		QString l = "1";
-		queueItem(l);
-	} else {
-		qDebug() << "In onClearListFinished error";
-		lblMsg->setText("Error occurred while clearing playlist ..");
-		qDebug() << response->readAll();
-	}
-	response->deleteLater();
-}
-
-//Add to playlist 1
-void InvokedApp::queueItem(QString &listId){
-	//TODO: use jsonDataAccess to construct the request
-	QByteArray addSong = "{\"jsonrpc\": \"2.0\", \"method\": \"Playlist.Add\", \"params\":{\"playlistid\":1, \"item\" :{ \"file\" : \"plugin://plugin.video.youtube/?action=play_video&videoid=";
-	addSong.append(vidId);
-	addSong.append("\"}}, \"id\" : 1}");
-
-	QNetworkRequest request;
-	request.setUrl(QUrl(server->json_url()));
-	request.setRawHeader("Content-Type", "application/json");
-
-	bool res;
-	Q_UNUSED(res);
-	QPointer<QNetworkReply> response = netManager->post(request, addSong);
-	res = connect(response, SIGNAL(finished()),
-				  this, SLOT(onQueueItemFinished()));
-	Q_ASSERT(res);
-}
-
-void InvokedApp::onQueueItemFinished(){
-	QNetworkReply *response = qobject_cast<QNetworkReply *>(sender());
-
-	if (response != NULL &&	response->bytesAvailable() > 0 &&
-		response->error() == QNetworkReply::NoError)
-	{
-		bool res;
-		Q_UNUSED(res);
-		res = disconnect(response, SIGNAL(finished()),
-						this, SLOT(onQueueItemFinished()));
-		Q_ASSERT(res);
-		openPlayer();
-	} else {
-		qDebug() << "In onAddSongFinished error";
-		lblMsg->setText("Error occurred while adding item to playlist ..");
-		qDebug() << response->readAll();
-	}
-	response->deleteLater();
-}
-
-//open player and start playing list 1
-void InvokedApp::openPlayer(){
-	QByteArray openPlayer = "{\"jsonrpc\": \"2.0\", \"method\": \"Player.Open\", \"params\":{\"item\":{\"playlistid\":1, \"position\" : 0}}, \"id\": 1}";
-
-	QNetworkRequest request;
-	request.setUrl(QUrl(server->json_url()));
-	request.setRawHeader("Content-Type", "application/json");
-
-	bool res;
-	Q_UNUSED(res);
-	QPointer<QNetworkReply> response = netManager->post(request, openPlayer);
-	res = connect(response, SIGNAL(finished()),
-			this, SLOT(onOpenPlayerFinished()));
-	Q_ASSERT(res);
-}
-
-void InvokedApp::onOpenPlayerFinished(){
-	QNetworkReply *response = qobject_cast<QNetworkReply *>(sender());
-	if (response != NULL &&	response->bytesAvailable() > 0 &&
-		response->error() == QNetworkReply::NoError)
-	{
-		//TODO: completed
-	} else {
-		qDebug() << "In onOpenPlayerFinished error";
-		lblMsg->setText("Error occurred while starting playlist ..");
-		qDebug() << response->readAll();
-	}
-	response->deleteLater();
 }
 
 void InvokedApp::slotError(QNetworkReply::NetworkError err){

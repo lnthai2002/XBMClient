@@ -37,9 +37,13 @@ public:
 	~InvokedApp();
 	void initUI();
 	void playOnServer(const QString& url);
-	QString idFromUrl(const QString &url);
 signals:
 	void finished();
+	void clearListError();
+	void clearListFinished();
+	void queueItemError();
+	void queueItemFinished();
+	void openPlayerError();
 private:
 	static const QString URLPATTERN;
 	QPointer<Server> server;
@@ -51,10 +55,11 @@ private:
 
 	void getActivePlayers();
 	void clearPlaylist();
-	void queueItem(QString &listId);
-	void openPlayer();
+	QString idFromUrl(const QString &url);
 private slots:
 	void dispatch(bb::cascades::Option* selectedOptions);
+	void queueItem();
+	void openPlayer();
 	void onGetActivePlayersFinished();
 	void onClearListFinished();
 	void onQueueItemFinished();

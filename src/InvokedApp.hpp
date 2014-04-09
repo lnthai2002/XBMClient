@@ -21,12 +21,10 @@
 #include <bb/cascades/Label>
 #include <bb/cascades/Option>
 #include <bb/data/JsonDataAccess>
-#include <bb/system/InvokeManager>
 #include "Server.hpp"
 
 using namespace bb::cascades;
 using namespace bb::data;
-using namespace bb::system;
 
 class InvokedApp : public QObject
 {
@@ -35,15 +33,16 @@ class InvokedApp : public QObject
     Q_OBJECT
 
 public:
-	InvokedApp(QPointer<Server> s, QPointer<bb::system::InvokeManager> i);
+	InvokedApp(QPointer<Server> s);
 	~InvokedApp();
 	void initUI();
 	void playOnServer(const QString& url);
 	QString idFromUrl(const QString &url);
+signals:
+	void finished();
 private:
 	static const QString URLPATTERN;
 	QPointer<Server> server;
-	QPointer<bb::system::InvokeManager> invokeManager;
 	QPointer<QNetworkAccessManager> netManager;
 	QString vidId;
 	AbstractPane *root;

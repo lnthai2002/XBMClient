@@ -21,16 +21,12 @@ class App : public QObject
     // Classes that inherit from QObject must have the Q_OBJECT macro so
     // the meta-object compiler (MOC) can add supporting code to the application.
     Q_OBJECT
-
 public:
     static const QString m_author;
     static const QString m_appName;
 
 	App(QObject *parent = 0);
 	~App();
-
-public slots:
-	void onInvoke(const bb::system::InvokeRequest& invoke);
 
 private:
 	QPointer<bb::system::InvokeManager> invokeManager;
@@ -39,7 +35,9 @@ private:
 
 	QPointer<Server> loadServer();
 private slots:
+	void onInvoke(const bb::system::InvokeRequest& invoke);
 	void registerServer();
+	void closeCard();
 };
 
 #endif /* APP_HPP_ */

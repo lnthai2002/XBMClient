@@ -21,14 +21,12 @@
 #include <bb/cascades/Application>
 #include <bb/cascades/QmlDocument>
 #include <bb/cascades/RadioGroup>
-#include <bb/system/CardDoneMessage>
 
 //static constant
 const QString InvokedApp::URLPATTERN = ".*(?:(?:youtu.be\\/)|(?:v\\/)|(?:\\/u\\/\\w\\/)|(?:embed\\/)|(?:watch\\?))\\??v?=?([^#\\&\\?]*).*";
 
-InvokedApp::InvokedApp(QPointer<Server> s, QPointer<bb::system::InvokeManager> i)
+InvokedApp::InvokedApp(QPointer<Server> s)
 	: server(s)
-	, invokeManager(i)
 	, netManager(new QNetworkAccessManager(this))
 {
 
@@ -184,12 +182,7 @@ void InvokedApp::dispatch(bb::cascades::Option* selectedOption){
 		QString l = "1";
 		queueItem(l);
 	}
-	// close card
-	CardDoneMessage message;
-	message.setData(tr("Card: I am done. yay!"));
-	message.setDataType("text/plain");
-	message.setReason(tr("Success!"));
-	invokeManager->sendCardDone(message);
+	emit finished();
 }
 
 //Clear playlist 1

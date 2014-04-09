@@ -63,12 +63,18 @@ App::App(QObject *parent)
 		{	// If the application is invoked,
 			// it must wait until it receives an invoked(..) signal
 			// so that it can determine the UI that it needs to initialize
-			invokedApp = new InvokedApp(server, invokeManager);
+			invokedApp = new InvokedApp(server);
+			bool ok = QObject::connect(invokedApp,SIGNAL(finished()),
+										this, SLOT(closeCard()));
+			Q_ASSERT(ok);
 			break;
 		}
 		case ApplicationStartupMode::InvokeCard:
 		{
-			invokedApp = new InvokedApp(server, invokeManager);
+			invokedApp = new InvokedApp(server);
+			bool ok = QObject::connect(invokedApp,SIGNAL(finished()),
+										this, SLOT(closeCard()));
+			Q_ASSERT(ok);
 			break;
 		}
 		default:
@@ -106,4 +112,12 @@ QPointer<Server> App::loadServer(){
 void App::onInvoke(const bb::system::InvokeRequest& invoke){
 	invokedApp->initUI();
 	invokedApp->playOnServer(invoke.uri().toString());
+}
+
+void App::closeCard(){
+	CardDoneMessage message;
+	message.setData(tr("Card: I am done. yay!"));
+	message.setDataType("text/plain");
+	message.setReason(tr("Success!"));
+	invokeManager->sendCardDone(message);
 }

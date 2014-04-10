@@ -208,12 +208,6 @@ void InvokedApp::onClearListFinished(){
 	if (response != NULL &&	response->bytesAvailable() > 0 &&
 		response->error() == QNetworkReply::NoError)
 	{
-		//use handle for addSong instead of handle for clearList
-		bool res;
-		Q_UNUSED(res);
-		res = disconnect(response, SIGNAL(finished()),
-			             this, SLOT(onClearListFinished()));
-		Q_ASSERT(res);
 		emit clearListFinished();
 	} else {
 		qDebug() << "In onClearListFinished error";
@@ -248,11 +242,6 @@ void InvokedApp::onQueueItemFinished(){
 	if (response != NULL &&	response->bytesAvailable() > 0 &&
 		response->error() == QNetworkReply::NoError)
 	{
-		bool res;
-		Q_UNUSED(res);
-		res = disconnect(response, SIGNAL(finished()),
-						this, SLOT(onQueueItemFinished()));
-		Q_ASSERT(res);
 		emit queueItemFinished();
 	} else {
 		qDebug() << "In onAddSongFinished error";

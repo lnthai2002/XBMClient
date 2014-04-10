@@ -47,42 +47,46 @@ void InvokedApp::initUI(){
 	indBusy = root->findChild<ActivityIndicator*>("indBusy");
 
 	bool ok = QObject::connect(this, SIGNAL(finished()),
-							   this, SLOT(stopBusy()));
+							   indBusy, SLOT(stop()));
 	Q_ASSERT(ok);
-	ok = QObject::connect(this, SIGNAL(getActivePlayersFinished()),
-						  this, SLOT(stopBusy()));
+	ok = QObject::connect(this, SIGNAL(getActivePlayersError()),
+						indBusy, SLOT(stop()));
+	Q_ASSERT(ok);
+	ok = QObject::connect(this, SIGNAL(getActivePlayersFinished(QList<QVariant> &)),
+						indBusy, SLOT(stop()));
 	Q_ASSERT(ok);
 	ok = QObject::connect(this, SIGNAL(clearListError()),
-						  this, SLOT(stopBusy()));
+						indBusy, SLOT(stop()));
 	Q_ASSERT(ok);
 	ok = QObject::connect(this, SIGNAL(clearListFinished()),
-						  this, SLOT(stopBusy()));
+						indBusy, SLOT(stop()));
 	Q_ASSERT(ok);
 	ok = QObject::connect(this, SIGNAL(queueItemError()),
-						  this, SLOT(stopBusy()));
+						indBusy, SLOT(stop()));
 	Q_ASSERT(ok);
 	ok = QObject::connect(this, SIGNAL(queueItemFinished()),
-						  this, SLOT(stopBusy()));
+						indBusy, SLOT(stop()));
 	Q_ASSERT(ok);
 	ok = QObject::connect(this, SIGNAL(openPlayerError()),
-						  this, SLOT(stopBusy()));
-	Q_ASSERT(ok);
-	RadioGroup *rdgActions = root->findChild<RadioGroup*>("rdgActions");
-
-	ok = QObject::connect(rdgActions, SIGNAL(selectedOptionChanged(bb::cascades::Option*)),
-						this, SLOT(dispatch(bb::cascades::Option*)));
+						indBusy, SLOT(stop()));
 	Q_ASSERT(ok);
 }
 
 void InvokedApp::playOnServer(const QString &url){
 	vidId = idFromUrl(url);
-	indBusy->start();
 	getActivePlayers();
+	bool ok = QObject::connect(this, SIGNAL(getActivePlayersFinished(QList<QVariant> &)),
+							this, SLOT(showActions(QList<QVariant>&)));
+	Q_ASSERT(ok);
 
-	//TODO: load waiting screen
+	RadioGroup *rdgActions = root->findChild<RadioGroup*>("rdgActions");
+	ok = QObject::connect(rdgActions, SIGNAL(selectedOptionChanged(bb::cascades::Option*)),
+						this, SLOT(dispatch(bb::cascades::Option*)));
+	Q_ASSERT(ok);
 }
 
 void InvokedApp::getActivePlayers(){
+	indBusy->start();
 	QVariant activePlayersQuery = jda.load(QDir::currentPath() + "/app/native/assets/JSON/getActivePlayers.json");
 
 	if (jda.hasError()){
@@ -115,79 +119,77 @@ void InvokedApp::onGetActivePlayersFinished(){
 
 		QList<QVariant> activePlayers = rep.value<QVariantMap>()["result"].toList();
 
-		RadioGroup *rdgActions = root->findChild<RadioGroup*>("rdgActions");
-		bool free = true;
-		if (activePlayers.isEmpty()){ //check for blank
-			qDebug() << "no active player";
-			lblMsg->setText("Nothing is playing on XBMC at the moment!");
-			rdgActions->add(Option::create()
-							.objectName("optPlayNow")
-							.text("play now"));
-		}else{
-			QString currentPlayer;
-			for(int i = 0; i < activePlayers.size(); i++){
-				QMap<QString,QVariant> player = activePlayers.at(i).toMap();
-				if (player["type"].value<QString>().compare("video") == 0){
-					qDebug() << "there is a video playing";
-					free = false;
-					lblMsg->setText("XBMC is playing video, do you want to ..");
-					rdgActions->add(Option::create()
-									.objectName("optPlayNow")
-									.text("stop and play this"));
-					rdgActions->add(Option::create()
-									.objectName("optQueue")
-									.text("queue this"));
-					break;
-				}else if(player["type"].value<QString>().compare("audio") == 0){
-					qDebug() << "there is an audio playing";
-					free = false;
-					lblMsg->setText("XBMC is playing audio, do you want to ..");
-					rdgActions->add(Option::create()
-									.objectName("optPlayNow")
-									.text("stop and play this"));
-					break;
-				}else{
-					currentPlayer = player["type"].value<QString>();
-					break;
-				}
-			}
-			if (free){ //there is something playing, but not audio or video
-				qDebug() << currentPlayer << " is playing";
-				lblMsg->setText("XBMC is playing " + currentPlayer + ", do you want to ..");
-				rdgActions->add(Option::create()
-								.objectName("optPlayNow")
-								.text("stop and play this"));
-			}
-		}
-		rdgActions->add(Option::create()
-						.objectName("optCancel")
-						.text("leave it as is"));
+		emit getActivePlayersFinished(activePlayers);
 	} else {
 		qDebug() << "Error in getting playlists: " << response->readAll();
 		lblMsg->setText("Can't get active playlist");
+		emit getActivePlayersError();
 	}
-	emit getActivePlayersFinished();
 	response->deleteLater();
+}
+
+void InvokedApp::showActions(QList<QVariant>& activePlayers){
+	RadioGroup *rdgActions = root->findChild<RadioGroup*>("rdgActions");
+	bool free = true;
+	if (activePlayers.isEmpty()){ //check for blank
+		qDebug() << "no active player";
+		lblMsg->setText("Nothing is playing on XBMC at the moment!");
+		rdgActions->add(Option::create().objectName("optPlayNow").text("play now"));
+	} else {
+		QString currentPlayer;
+		for(int i = 0; i < activePlayers.size(); i++){
+			QMap<QString,QVariant> player = activePlayers.at(i).toMap();
+			if (player["type"].value<QString>().compare("video") == 0) {
+				qDebug() << "there is a video playing";
+				free = false;
+				lblMsg->setText("XBMC is playing video, do you want to ..");
+				rdgActions->add(Option::create().objectName("optPlayNow").text("stop and play this"));
+				rdgActions->add(Option::create().objectName("optQueue").text("queue this"));
+				break;
+			} else if(player["type"].value<QString>().compare("audio") == 0) {
+				qDebug() << "there is an audio playing";
+				free = false;
+				lblMsg->setText("XBMC is playing audio, do you want to ..");
+				rdgActions->add(Option::create().objectName("optPlayNow").text("stop and play this"));
+				break;
+			} else {
+				currentPlayer = player["type"].value<QString>();
+				break;
+			}
+		}
+		if (free){ //there is something playing, but not audio or video
+			qDebug() << currentPlayer << " is playing";
+			lblMsg->setText("XBMC is playing " + currentPlayer + ", do you want to ..");
+			rdgActions->add(Option::create().objectName("optPlayNow").text("stop and play this"));
+		}
+	}
 }
 
 void InvokedApp::dispatch(bb::cascades::Option* selectedOption){
 	indBusy->start();
+	bool ok;
 	if (selectedOption->objectName() == "optPlayNow"){
 		clearPlaylist();
-		bool ok = QObject::connect(this, SIGNAL(clearListFinished()),
-								this, SLOT(queueItem()));
+		ok = QObject::connect(this, SIGNAL(clearListFinished()),
+							this, SLOT(queueItem()));
 		Q_ASSERT(ok);
 		ok = QObject::connect(this, SIGNAL(queueItemFinished()),
 							this, SLOT(openPlayer()));
 		Q_ASSERT(ok);
-	}else if(selectedOption->objectName() == "optQueue"){
+		ok = QObject::connect(this, SIGNAL(openPlayerFinished()),
+							this, SIGNAL(finished()));
+		Q_ASSERT(ok);
+	}else if (selectedOption->objectName() == "optQueue"){
 		queueItem();
+		ok = QObject::connect(this, SIGNAL(queueItemFinished()),
+							this, SIGNAL(finished()));
+		Q_ASSERT(ok);
 	}
-	emit finished();
 }
 
 //Clear playlist 1
 void InvokedApp::clearPlaylist(){
+	indBusy->start();
 	QByteArray clearList = "{\"jsonrpc\": \"2.0\", \"method\": \"Playlist.Clear\", \"params\":{\"playlistid\":1}, \"id\": 1}";
 
 	QNetworkRequest request;
@@ -224,6 +226,7 @@ void InvokedApp::onClearListFinished(){
 
 //Add to playlist 1
 void InvokedApp::queueItem(){
+	indBusy->start();
 	//TODO: use jsonDataAccess to construct the request
 	QByteArray addSong = "{\"jsonrpc\": \"2.0\", \"method\": \"Playlist.Add\", \"params\":{\"playlistid\":1, \"item\" :{ \"file\" : \"plugin://plugin.video.youtube/?action=play_video&videoid=";
 	addSong.append(vidId);
@@ -262,6 +265,7 @@ void InvokedApp::onQueueItemFinished(){
 
 //open player and start playing list 1
 void InvokedApp::openPlayer(){
+	indBusy->start();
 	QByteArray openPlayer = "{\"jsonrpc\": \"2.0\", \"method\": \"Player.Open\", \"params\":{\"item\":{\"playlistid\":1, \"position\" : 0}}, \"id\": 1}";
 
 	QNetworkRequest request;
@@ -279,7 +283,7 @@ void InvokedApp::onOpenPlayerFinished(){
 	if (response != NULL &&	response->bytesAvailable() > 0 &&
 		response->error() == QNetworkReply::NoError)
 	{
-		emit finished();
+		emit openPlayerFinished();
 	} else {
 		qDebug() << "In onOpenPlayerFinished error";
 		lblMsg->setText("Error occurred while starting playlist ..");
@@ -316,10 +320,6 @@ QString InvokedApp::idFromUrl(const QString &url){
 	}
 */
 	return rx.cap(1);
-}
-
-void InvokedApp::stopBusy(){
-	indBusy->stop();
 }
 
 void InvokedApp::slotError(QNetworkReply::NetworkError err){

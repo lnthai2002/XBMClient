@@ -88,6 +88,7 @@ App::~App(){
 	//TODO: Whatever appear in constructor must be destroyed
 	delete server;
 	delete invokedApp;
+	delete invokeManager;
 }
 
 void App::registerServer(){

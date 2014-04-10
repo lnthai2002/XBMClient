@@ -39,35 +39,37 @@ public:
 	void initUI();
 	void playOnServer(const QString& url);
 signals:
-	void finished();
-	void getActivePlayersFinished();
+	void getActivePlayersError();
+	void getActivePlayersFinished(QList<QVariant> &);
 	void clearListError();
 	void clearListFinished();
 	void queueItemError();
 	void queueItemFinished();
 	void openPlayerError();
+	void openPlayerFinished();
+	void finished();
 private:
 	static const QString URLPATTERN;
+	QString vidId;
+	JsonDataAccess jda;
 	QPointer<Server> server;
 	QPointer<QNetworkAccessManager> netManager;
-	QString vidId;
-	AbstractPane *root;
-	Label *lblMsg;
-	ActivityIndicator *indBusy;
-	JsonDataAccess jda;
+	QPointer<AbstractPane> root;
+	QPointer<Label> lblMsg;
+	QPointer<ActivityIndicator> indBusy;
 
 	void getActivePlayers();
 	void clearPlaylist();
 	QString idFromUrl(const QString &url);
 private slots:
 	void dispatch(bb::cascades::Option* selectedOptions);
+	void showActions(QList<QVariant>& activePlayers);
 	void queueItem();
 	void openPlayer();
 	void onGetActivePlayersFinished();
 	void onClearListFinished();
 	void onQueueItemFinished();
 	void onOpenPlayerFinished();
-	void stopBusy();
 	void slotError(QNetworkReply::NetworkError err);
 	void slotSslErrors(QList<QSslError> errs);
 };

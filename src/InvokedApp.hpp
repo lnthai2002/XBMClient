@@ -18,6 +18,7 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <bb/cascades/AbstractPane>
+#include <bb/cascades/ActivityIndicator>
 #include <bb/cascades/Label>
 #include <bb/cascades/Option>
 #include <bb/data/JsonDataAccess>
@@ -39,6 +40,7 @@ public:
 	void playOnServer(const QString& url);
 signals:
 	void finished();
+	void getActivePlayersFinished();
 	void clearListError();
 	void clearListFinished();
 	void queueItemError();
@@ -51,6 +53,7 @@ private:
 	QString vidId;
 	AbstractPane *root;
 	Label *lblMsg;
+	ActivityIndicator *indBusy;
 	JsonDataAccess jda;
 
 	void getActivePlayers();
@@ -64,6 +67,7 @@ private slots:
 	void onClearListFinished();
 	void onQueueItemFinished();
 	void onOpenPlayerFinished();
+	void stopBusy();
 	void slotError(QNetworkReply::NetworkError err);
 	void slotSslErrors(QList<QSslError> errs);
 };

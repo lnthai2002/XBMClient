@@ -33,6 +33,11 @@ NavigationPane {
                 objectName: "lblMsg"
             }
 
+            ActivityIndicator {
+                id: indBusy
+                objectName: "indBusy"
+
+            }
             RadioGroup {
                 id: rdgActions
                 objectName: "rdgActions"

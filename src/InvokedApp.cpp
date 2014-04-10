@@ -44,14 +44,39 @@ void InvokedApp::initUI(){
 	Application::instance()->setScene(root);
 
 	lblMsg = root->findChild<Label*>("lblMsg");
+	indBusy = root->findChild<ActivityIndicator*>("indBusy");
+
+	bool ok = QObject::connect(this, SIGNAL(finished()),
+							   this, SLOT(stopBusy()));
+	Q_ASSERT(ok);
+	ok = QObject::connect(this, SIGNAL(getActivePlayersFinished()),
+						  this, SLOT(stopBusy()));
+	Q_ASSERT(ok);
+	ok = QObject::connect(this, SIGNAL(clearListError()),
+						  this, SLOT(stopBusy()));
+	Q_ASSERT(ok);
+	ok = QObject::connect(this, SIGNAL(clearListFinished()),
+						  this, SLOT(stopBusy()));
+	Q_ASSERT(ok);
+	ok = QObject::connect(this, SIGNAL(queueItemError()),
+						  this, SLOT(stopBusy()));
+	Q_ASSERT(ok);
+	ok = QObject::connect(this, SIGNAL(queueItemFinished()),
+						  this, SLOT(stopBusy()));
+	Q_ASSERT(ok);
+	ok = QObject::connect(this, SIGNAL(openPlayerError()),
+						  this, SLOT(stopBusy()));
+	Q_ASSERT(ok);
 	RadioGroup *rdgActions = root->findChild<RadioGroup*>("rdgActions");
-	bool ok = QObject::connect(rdgActions, SIGNAL(selectedOptionChanged(bb::cascades::Option*)),
-								this, SLOT(dispatch(bb::cascades::Option*)));
+
+	ok = QObject::connect(rdgActions, SIGNAL(selectedOptionChanged(bb::cascades::Option*)),
+						this, SLOT(dispatch(bb::cascades::Option*)));
 	Q_ASSERT(ok);
 }
 
 void InvokedApp::playOnServer(const QString &url){
 	vidId = idFromUrl(url);
+	indBusy->start();
 	getActivePlayers();
 
 	//TODO: load waiting screen
@@ -139,11 +164,14 @@ void InvokedApp::onGetActivePlayersFinished(){
 						.text("leave it as is"));
 	} else {
 		qDebug() << "Error in getting playlists: " << response->readAll();
+		lblMsg->setText("Can't get active playlist");
 	}
+	emit getActivePlayersFinished();
 	response->deleteLater();
 }
 
 void InvokedApp::dispatch(bb::cascades::Option* selectedOption){
+	indBusy->start();
 	if (selectedOption->objectName() == "optPlayNow"){
 		clearPlaylist();
 		bool ok = QObject::connect(this, SIGNAL(clearListFinished()),
@@ -288,6 +316,10 @@ QString InvokedApp::idFromUrl(const QString &url){
 	}
 */
 	return rx.cap(1);
+}
+
+void InvokedApp::stopBusy(){
+	indBusy->stop();
 }
 
 void InvokedApp::slotError(QNetworkReply::NetworkError err){

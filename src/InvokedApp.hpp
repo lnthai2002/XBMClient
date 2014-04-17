@@ -47,6 +47,8 @@ signals:
 	void queueItemFinished();
 	void openPlayerError();
 	void openPlayerFinished();
+	void getPlaylistError();
+	void playlistAvailable(QList<QVariant> &);
 	void finished();
 private:
 	static const QString URLPATTERN;
@@ -70,6 +72,8 @@ private slots:
 	void onClearListFinished();
 	void onQueueItemFinished();
 	void onOpenPlayerFinished();
+	void getPlaylist();
+	void onGetPlaylistFinished();
 	void slotError(QNetworkReply::NetworkError err);
 	void slotSslErrors(QList<QSslError> errs);
 };

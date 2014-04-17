@@ -130,38 +130,24 @@ void InvokedApp::onGetActivePlayersFinished(){
 
 void InvokedApp::showActions(QList<QVariant>& activePlayers){
 	RadioGroup *rdgActions = root->findChild<RadioGroup*>("rdgActions");
-	bool free = true;
 	if (activePlayers.isEmpty()){ //check for blank
-		qDebug() << "no active player";
 		lblMsg->setText("Nothing is playing on XBMC at the moment!");
 		rdgActions->add(Option::create().objectName("optPlayNow").text("play now"));
 	} else {
-		QString currentPlayer;
 		for(int i = 0; i < activePlayers.size(); i++){
 			QMap<QString,QVariant> player = activePlayers.at(i).toMap();
 			if (player["type"].value<QString>().compare("video") == 0) {
-				qDebug() << "there is a video playing";
-				free = false;
 				lblMsg->setText("XBMC is playing video, do you want to ..");
-				rdgActions->add(Option::create().objectName("optPlayNow").text("stop and play this"));
-				rdgActions->add(Option::create().objectName("optQueue").text("queue this"));
 				break;
 			} else if(player["type"].value<QString>().compare("audio") == 0) {
-				qDebug() << "there is an audio playing";
-				free = false;
 				lblMsg->setText("XBMC is playing audio, do you want to ..");
-				rdgActions->add(Option::create().objectName("optPlayNow").text("stop and play this"));
 				break;
 			} else {
-				currentPlayer = player["type"].value<QString>();
-				break;
+				lblMsg->setText("XBMC is playing " + player["type"].value<QString>() + ", do you want to ..");
 			}
 		}
-		if (free){ //there is something playing, but not audio or video
-			qDebug() << currentPlayer << " is playing";
-			lblMsg->setText("XBMC is playing " + currentPlayer + ", do you want to ..");
-			rdgActions->add(Option::create().objectName("optPlayNow").text("stop and play this"));
-		}
+		rdgActions->add(Option::create().objectName("optPlayNow").text("stop and play this"));
+		rdgActions->add(Option::create().objectName("optQueue").text("queue this"));
 	}
 }
 
@@ -278,6 +264,38 @@ void InvokedApp::onOpenPlayerFinished(){
 		lblMsg->setText("Error occurred while starting playlist ..");
 		qDebug() << response->readAll();
 		emit openPlayerError();
+	}
+	response->deleteLater();
+}
+
+void InvokedApp::getPlaylist(){
+	indBusy->start();
+	QByteArray getItems = "{\"jsonrpc\": \"2.0\", \"method\": \"Playlist.GetItems\", \"params\":{\"properties\": [ \"title\" ], \"playlistid\":1}, \"id\": 1}";
+
+	QNetworkRequest request;
+	request.setUrl(QUrl(server->json_url()));
+	request.setRawHeader("Content-Type", "application/json");
+
+	QPointer<QNetworkReply> response = netManager->post(request, getItems);
+	bool ok = QObject::connect(response, SIGNAL(finished()),
+						this, SLOT(onGetPlaylistFinished()));
+	Q_ASSERT(ok);
+}
+
+void InvokedApp::onGetPlaylistFinished(){
+	QNetworkReply *response = qobject_cast<QNetworkReply *>(sender());
+	if (response != NULL &&	response->bytesAvailable() > 0 &&
+		response->error() == QNetworkReply::NoError)
+	{
+		qDebug() << "playlist items: " <<  response->readAll();
+		QVariant rep = jda.loadFromBuffer(response->readAll());
+
+		QList<QVariant> items = rep.value<QVariantMap>()["result"].toList();
+		emit playlistAvailable(items);
+	} else {
+		lblMsg->setText("Error occurred while getting playlist ..");
+		qDebug() << response->readAll();
+		emit getPlaylistError();
 	}
 	response->deleteLater();
 }

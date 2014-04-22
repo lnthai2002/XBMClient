@@ -36,7 +36,8 @@ NavigationPane {
             ActivityIndicator {
                 id: indBusy
                 objectName: "indBusy"
-
+                verticalAlignment: VerticalAlignment.Center
+                horizontalAlignment: HorizontalAlignment.Center
             }
             RadioGroup {
                 id: rdgActions

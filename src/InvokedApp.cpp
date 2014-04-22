@@ -20,7 +20,7 @@
 #include <QMap>
 #include <bb/cascades/Application>
 #include <bb/cascades/QmlDocument>
-#include <bb/cascades/RadioGroup>
+
 
 //static constant
 const QString InvokedApp::URLPATTERN = ".*(?:(?:youtu.be\\/)|(?:v\\/)|(?:\\/u\\/\\w\\/)|(?:embed\\/)|(?:watch\\?))\\??v?=?([^#\\&\\?]*).*";
@@ -44,31 +44,32 @@ void InvokedApp::initUI(){
 	Application::instance()->setScene(root);
 
 	lblMsg = root->findChild<Label*>("lblMsg");
+	//rdgActions = root->findChild<RadioGroup*>("rdgActions");
 	indBusy = root->findChild<ActivityIndicator*>("indBusy");
 
 	bool ok = QObject::connect(this, SIGNAL(finished()),
-							   indBusy, SLOT(stop()));
+							   this, SLOT(showActive()));
 	Q_ASSERT(ok);
 	ok = QObject::connect(this, SIGNAL(getActivePlayersError()),
-						indBusy, SLOT(stop()));
+						this, SLOT(showActive()));
 	Q_ASSERT(ok);
 	ok = QObject::connect(this, SIGNAL(getActivePlayersFinished(QList<QVariant> &)),
-						indBusy, SLOT(stop()));
+						this, SLOT(showActive()));
 	Q_ASSERT(ok);
 	ok = QObject::connect(this, SIGNAL(clearListError()),
-						indBusy, SLOT(stop()));
+						this, SLOT(showActive()));
 	Q_ASSERT(ok);
 	ok = QObject::connect(this, SIGNAL(clearListFinished()),
-						indBusy, SLOT(stop()));
+						this, SLOT(showActive()));
 	Q_ASSERT(ok);
 	ok = QObject::connect(this, SIGNAL(queueItemError()),
-						indBusy, SLOT(stop()));
+						this, SLOT(showActive()));
 	Q_ASSERT(ok);
 	ok = QObject::connect(this, SIGNAL(queueItemFinished()),
-						indBusy, SLOT(stop()));
+						this, SLOT(showActive()));
 	Q_ASSERT(ok);
 	ok = QObject::connect(this, SIGNAL(openPlayerError()),
-						indBusy, SLOT(stop()));
+						this, SLOT(showActive()));
 	Q_ASSERT(ok);
 }
 
@@ -79,14 +80,14 @@ void InvokedApp::playOnServer(const QString &url){
 							this, SLOT(showActions(QList<QVariant>&)));
 	Q_ASSERT(ok);
 
-	RadioGroup *rdgActions = root->findChild<RadioGroup*>("rdgActions");
+	QPointer<RadioGroup> rdgActions = root->findChild<RadioGroup*>("rdgActions");
 	ok = QObject::connect(rdgActions, SIGNAL(selectedOptionChanged(bb::cascades::Option*)),
 						this, SLOT(dispatch(bb::cascades::Option*)));
 	Q_ASSERT(ok);
 }
 
 void InvokedApp::getActivePlayers(){
-	indBusy->start();
+	showBusy();
 	QVariant activePlayersQuery = jda.load(QDir::currentPath() + "/app/native/assets/JSON/getActivePlayers.json");
 
 	if (jda.hasError()){
@@ -105,6 +106,9 @@ void InvokedApp::getActivePlayers(){
 
 		bool ok = QObject::connect(response, SIGNAL(finished()),
 									this, SLOT(onGetActivePlayersFinished()));
+		Q_ASSERT(ok);
+		ok = QObject::connect(response, SIGNAL(error(QNetworkReply::NetworkError)),
+							this, SLOT(slotError(QNetworkReply::NetworkError)));
 		Q_ASSERT(ok);
 		delete activePlayersQueryByteArray;
 	}
@@ -129,7 +133,7 @@ void InvokedApp::onGetActivePlayersFinished(){
 }
 
 void InvokedApp::showActions(QList<QVariant>& activePlayers){
-	RadioGroup *rdgActions = root->findChild<RadioGroup*>("rdgActions");
+	QPointer<RadioGroup> rdgActions = root->findChild<RadioGroup*>("rdgActions");
 	if (activePlayers.isEmpty()){ //check for blank
 		lblMsg->setText("Nothing is playing on XBMC at the moment!");
 		rdgActions->add(Option::create().objectName("optPlayNow").text("play now"));
@@ -152,7 +156,7 @@ void InvokedApp::showActions(QList<QVariant>& activePlayers){
 }
 
 void InvokedApp::dispatch(bb::cascades::Option* selectedOption){
-	indBusy->start();
+	showBusy();
 	bool ok;
 	if (selectedOption->objectName() == "optPlayNow"){
 		clearPlaylist();
@@ -175,7 +179,7 @@ void InvokedApp::dispatch(bb::cascades::Option* selectedOption){
 
 //Clear playlist 1
 void InvokedApp::clearPlaylist(){
-	indBusy->start();
+	showBusy();
 	QByteArray clearList = "{\"jsonrpc\": \"2.0\", \"method\": \"Playlist.Clear\", \"params\":{\"playlistid\":1}, \"id\": 1}";
 
 	QNetworkRequest request;
@@ -185,6 +189,9 @@ void InvokedApp::clearPlaylist(){
 	QPointer<QNetworkReply> response = netManager->post(request, clearList);
 	bool ok = QObject::connect(response, SIGNAL(finished()),
 						this, SLOT(onClearListFinished()));
+	Q_ASSERT(ok);
+	ok = QObject::connect(response, SIGNAL(error(QNetworkReply::NetworkError)),
+						this, SLOT(slotError(QNetworkReply::NetworkError)));
 	Q_ASSERT(ok);
 }
 
@@ -206,7 +213,7 @@ void InvokedApp::onClearListFinished(){
 
 //Add to playlist 1
 void InvokedApp::queueItem(){
-	indBusy->start();
+	showBusy();
 	//TODO: use jsonDataAccess to construct the request
 	QByteArray addSong = "{\"jsonrpc\": \"2.0\", \"method\": \"Playlist.Add\", \"params\":{\"playlistid\":1, \"item\" :{ \"file\" : \"plugin://plugin.video.youtube/?action=play_video&videoid=";
 	addSong.append(vidId);
@@ -217,9 +224,12 @@ void InvokedApp::queueItem(){
 	request.setRawHeader("Content-Type", "application/json");
 
 	QPointer<QNetworkReply> response = netManager->post(request, addSong);
-	bool res = connect(response, SIGNAL(finished()),
+	bool ok = connect(response, SIGNAL(finished()),
 				  this, SLOT(onQueueItemFinished()));
-	Q_ASSERT(res);
+	Q_ASSERT(ok);
+	ok = QObject::connect(response, SIGNAL(error(QNetworkReply::NetworkError)),
+						this, SLOT(slotError(QNetworkReply::NetworkError)));
+	Q_ASSERT(ok);
 }
 
 void InvokedApp::onQueueItemFinished(){
@@ -240,7 +250,7 @@ void InvokedApp::onQueueItemFinished(){
 
 //open player and start playing list 1
 void InvokedApp::openPlayer(){
-	indBusy->start();
+	showBusy();
 	QByteArray openPlayer = "{\"jsonrpc\": \"2.0\", \"method\": \"Player.Open\", \"params\":{\"item\":{\"playlistid\":1, \"position\" : 0}}, \"id\": 1}";
 
 	QNetworkRequest request;
@@ -248,9 +258,12 @@ void InvokedApp::openPlayer(){
 	request.setRawHeader("Content-Type", "application/json");
 
 	QPointer<QNetworkReply> response = netManager->post(request, openPlayer);
-	bool res = connect(response, SIGNAL(finished()),
+	bool ok = connect(response, SIGNAL(finished()),
 			this, SLOT(onOpenPlayerFinished()));
-	Q_ASSERT(res);
+	Q_ASSERT(ok);
+	ok = QObject::connect(response, SIGNAL(error(QNetworkReply::NetworkError)),
+						this, SLOT(slotError(QNetworkReply::NetworkError)));
+	Q_ASSERT(ok);
 }
 
 void InvokedApp::onOpenPlayerFinished(){
@@ -269,7 +282,7 @@ void InvokedApp::onOpenPlayerFinished(){
 }
 
 void InvokedApp::getPlaylist(){
-	indBusy->start();
+	showBusy();
 	QByteArray getItems = "{\"jsonrpc\": \"2.0\", \"method\": \"Playlist.GetItems\", \"params\":{\"properties\": [ \"title\" ], \"playlistid\":1}, \"id\": 1}";
 
 	QNetworkRequest request;
@@ -279,6 +292,9 @@ void InvokedApp::getPlaylist(){
 	QPointer<QNetworkReply> response = netManager->post(request, getItems);
 	bool ok = QObject::connect(response, SIGNAL(finished()),
 						this, SLOT(onGetPlaylistFinished()));
+	Q_ASSERT(ok);
+	ok = QObject::connect(response, SIGNAL(error(QNetworkReply::NetworkError)),
+						this, SLOT(slotError(QNetworkReply::NetworkError)));
 	Q_ASSERT(ok);
 }
 
@@ -329,8 +345,20 @@ QString InvokedApp::idFromUrl(const QString &url){
 	return rx.cap(1);
 }
 
-void InvokedApp::slotError(QNetworkReply::NetworkError err){
+void InvokedApp::showBusy(){
+	QPointer<RadioGroup> rdgActions = root->findChild<RadioGroup*>("rdgActions");
+	rdgActions->setEnabled(false);
+	indBusy->start();
+}
 
+void InvokedApp::showActive(){
+	QPointer<RadioGroup> rdgActions = root->findChild<RadioGroup*>("rdgActions");
+	indBusy->stop();
+	rdgActions->setEnabled(true);
+}
+
+void InvokedApp::slotError(QNetworkReply::NetworkError err){
+	lblMsg->setText("Network error!");
 }
 
 void InvokedApp::slotSslErrors(QList<QSslError> errs){

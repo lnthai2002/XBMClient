@@ -120,5 +120,6 @@ void App::closeCard(){
 	message.setData(tr("Card: I am done. yay!"));
 	message.setDataType("text/plain");
 	message.setReason(tr("Success!"));
+	delete invokedApp;
 	invokeManager->sendCardDone(message);
 }

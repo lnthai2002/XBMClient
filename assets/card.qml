@@ -16,39 +16,37 @@
 
 import bb.cascades 1.2
 
-NavigationPane {
-    Page {
-        Container {
-            horizontalAlignment: HorizontalAlignment.Left
-            verticalAlignment: VerticalAlignment.Top
-            layout: StackLayout {
-                orientation: LayoutOrientation.TopToBottom
-            }
-            topPadding: 20.0
-            bottomPadding: 20.0
-            leftPadding: 20.0
-            rightPadding: 20.0
-            Label {
-                id: lblMsg
-                objectName: "lblMsg"
-            }
-
-            ActivityIndicator {
-                id: indBusy
-                objectName: "indBusy"
-                verticalAlignment: VerticalAlignment.Center
-                horizontalAlignment: HorizontalAlignment.Center
-            }
-            RadioGroup {
-                id: rdgActions
-                objectName: "rdgActions"
-            }
-            Container {
-                layout: StackLayout {
-                    orientation: LayoutOrientation.LeftToRight
-                }
-            }
-
+Page {
+    Container {
+        horizontalAlignment: HorizontalAlignment.Left
+        verticalAlignment: VerticalAlignment.Top
+        layout: StackLayout {
+            orientation: LayoutOrientation.TopToBottom
         }
+        topPadding: 20.0
+        bottomPadding: 20.0
+        leftPadding: 20.0
+        rightPadding: 20.0
+        Label {
+            id: lblMsg
+            objectName: "lblMsg"
+        }
+
+        ActivityIndicator {
+            id: indBusy
+            objectName: "indBusy"
+            verticalAlignment: VerticalAlignment.Center
+            horizontalAlignment: HorizontalAlignment.Center
+        }
+        RadioGroup {
+            id: rdgActions
+            objectName: "rdgActions"
+        }
+        Container {
+            layout: StackLayout {
+                orientation: LayoutOrientation.LeftToRight
+            }
+        }
+
     }
 }

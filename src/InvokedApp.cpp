@@ -33,8 +33,10 @@ InvokedApp::InvokedApp(QPointer<Server> s)
 }
 
 InvokedApp::~InvokedApp(){
+	qDebug() << "Destructing invoked app";
 	delete netManager;
 	delete server;
+	//rdgActions->removeAll();
 }
 
 void InvokedApp::initUI(){
@@ -43,12 +45,16 @@ void InvokedApp::initUI(){
 	root = qml->createRootObject<AbstractPane>();
 	Application::instance()->setScene(root);
 
+//	QObject::connect(root, SIGNAL(popTransitionEnded(bb::cascades::Page*)),
+//	        this, SLOT(pagePopFinished(bb::cascades::Page*)));
+
 	lblMsg = root->findChild<Label*>("lblMsg");
-	//rdgActions = root->findChild<RadioGroup*>("rdgActions");
+	rdgActions = root->findChild<RadioGroup*>("rdgActions");
+	//rdgActions->removeAll();
 	indBusy = root->findChild<ActivityIndicator*>("indBusy");
 
 	bool ok = QObject::connect(this, SIGNAL(finished()),
-							   this, SLOT(showActive()));
+							   qml, SLOT(deleteLater()));
 	Q_ASSERT(ok);
 	ok = QObject::connect(this, SIGNAL(getActivePlayersError()),
 						this, SLOT(showActive()));
@@ -79,8 +85,6 @@ void InvokedApp::playOnServer(const QString &url){
 	bool ok = QObject::connect(this, SIGNAL(getActivePlayersFinished(QList<QVariant> &)),
 							this, SLOT(showActions(QList<QVariant>&)));
 	Q_ASSERT(ok);
-
-	QPointer<RadioGroup> rdgActions = root->findChild<RadioGroup*>("rdgActions");
 	ok = QObject::connect(rdgActions, SIGNAL(selectedOptionChanged(bb::cascades::Option*)),
 						this, SLOT(dispatch(bb::cascades::Option*)));
 	Q_ASSERT(ok);
@@ -133,7 +137,6 @@ void InvokedApp::onGetActivePlayersFinished(){
 }
 
 void InvokedApp::showActions(QList<QVariant>& activePlayers){
-	QPointer<RadioGroup> rdgActions = root->findChild<RadioGroup*>("rdgActions");
 	if (activePlayers.isEmpty()){ //check for blank
 		lblMsg->setText("Nothing is playing on XBMC at the moment!");
 		rdgActions->add(Option::create().objectName("optPlayNow").text("play now"));
@@ -153,6 +156,7 @@ void InvokedApp::showActions(QList<QVariant>& activePlayers){
 		rdgActions->add(Option::create().objectName("optPlayNow").text("stop and play this"));
 		rdgActions->add(Option::create().objectName("optQueue").text("queue this"));
 	}
+	rdgActions->add(Option::create().objectName("optCancel").text("do nothing"));
 }
 
 void InvokedApp::dispatch(bb::cascades::Option* selectedOption){
@@ -174,6 +178,8 @@ void InvokedApp::dispatch(bb::cascades::Option* selectedOption){
 		ok = QObject::connect(this, SIGNAL(queueItemFinished()),
 							this, SIGNAL(finished()));
 		Q_ASSERT(ok);
+	}else{
+		emit finished();
 	}
 }
 
@@ -346,15 +352,18 @@ QString InvokedApp::idFromUrl(const QString &url){
 }
 
 void InvokedApp::showBusy(){
-	QPointer<RadioGroup> rdgActions = root->findChild<RadioGroup*>("rdgActions");
 	rdgActions->setEnabled(false);
 	indBusy->start();
 }
 
 void InvokedApp::showActive(){
-	QPointer<RadioGroup> rdgActions = root->findChild<RadioGroup*>("rdgActions");
 	indBusy->stop();
 	rdgActions->setEnabled(true);
+}
+
+void InvokedApp::pagePopFinished(bb::cascades::Page* page){
+	qDebug() << "pop page";
+	delete page;
 }
 
 void InvokedApp::slotError(QNetworkReply::NetworkError err){

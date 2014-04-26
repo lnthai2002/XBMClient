@@ -18,6 +18,7 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <bb/cascades/AbstractPane>
+#include <bb/cascades/Page>
 #include <bb/cascades/ActivityIndicator>
 #include <bb/cascades/Label>
 #include <bb/cascades/Option>
@@ -59,7 +60,7 @@ private:
 	QPointer<QNetworkAccessManager> netManager;
 	QPointer<AbstractPane> root;
 	QPointer<Label> lblMsg;
-	//QPointer<RadioGroup> rdgActions;
+	QPointer<RadioGroup> rdgActions;
 	QPointer<ActivityIndicator> indBusy;
 
 	void getActivePlayers();
@@ -78,6 +79,7 @@ private slots:
 	void onGetPlaylistFinished();
 	void showActive();
 	void showBusy();
+	void pagePopFinished(bb::cascades::Page* page);
 	void slotError(QNetworkReply::NetworkError err);
 	void slotSslErrors(QList<QSslError> errs);
 };

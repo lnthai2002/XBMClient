@@ -48,6 +48,7 @@
          May have multiple values for each language. See samples or xsd schema file. Optional. -->
     <description>The XBMC Client application</description>
 
+	<env var="CASCADES_THEME" value="dark"/>
     <!-- Copyright information. Optional. -->
     <!-- <copyright></copyright> -->
 

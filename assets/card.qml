@@ -18,36 +18,43 @@ import bb.cascades 1.2
 
 Page {
     Container {
-        horizontalAlignment: HorizontalAlignment.Left
-        verticalAlignment: VerticalAlignment.Top
-        layout: StackLayout {
-            orientation: LayoutOrientation.TopToBottom
-        }
-        topPadding: 20.0
-        bottomPadding: 20.0
-        leftPadding: 20.0
-        rightPadding: 20.0
-        background: Color.LightGray
-        Label {
-            id: lblMsg
-            objectName: "lblMsg"
-        }
-
-        ActivityIndicator {
-            id: indBusy
-            objectName: "indBusy"
-            verticalAlignment: VerticalAlignment.Center
-            horizontalAlignment: HorizontalAlignment.Center
-        }
-        RadioGroup {
-            id: rdgActions
-            objectName: "rdgActions"
-        }
+        layout: DockLayout {}
         Container {
+            horizontalAlignment: HorizontalAlignment.Center
+            verticalAlignment: VerticalAlignment.Top
             layout: StackLayout {
-                orientation: LayoutOrientation.LeftToRight
+                orientation: LayoutOrientation.TopToBottom
+            }
+            topPadding: 20.0
+            bottomPadding: 20.0
+            leftPadding: 20.0
+            rightPadding: 20.0
+            Label {
+                id: lblMsg
+                objectName: "lblMsg"
+                textStyle.fontSize: FontSize.Medium
+            }
+            ActivityIndicator {
+                id: indBusy
+                objectName: "indBusy"
+                horizontalAlignment: HorizontalAlignment.Center
+            }
+            RadioGroup {
+                id: rdgActions
+                objectName: "rdgActions"
             }
         }
-
+        Container {
+            layout: DockLayout {}
+            horizontalAlignment: HorizontalAlignment.Fill
+            verticalAlignment: VerticalAlignment.Bottom
+            preferredWidth: 800
+            background: Color.Black
+            ImageView {
+                imageSource: "asset:///images/barLogo_small.png"
+                verticalAlignment: VerticalAlignment.Bottom
+                horizontalAlignment: HorizontalAlignment.Center
+            }
+        }
     }
 }

@@ -38,7 +38,6 @@ class InvokedApp : public QObject
 public:
 	InvokedApp(QPointer<Server> s);
 	~InvokedApp();
-	void initUI();
 	void playOnServer(const QString& url);
 signals:
 	void getActivePlayersError();
@@ -54,7 +53,7 @@ signals:
 	void finished();
 private:
 	static const QString URLPATTERN;
-	QString vidId;
+	QString videoClipId;
 	JsonDataAccess jda;
 	QPointer<Server> server;
 	QPointer<QNetworkAccessManager> netManager;
@@ -63,9 +62,10 @@ private:
 	QPointer<RadioGroup> rdgActions;
 	QPointer<ActivityIndicator> indBusy;
 
+	void initUI();
 	void getActivePlayers();
 	void clearPlaylist();
-	QString idFromUrl(const QString &url);
+	void setVideoClipId(const QString &url);
 private slots:
 	void dispatch(bb::cascades::Option* selectedOptions);
 	void showActions(QList<QVariant>& activePlayers);
@@ -79,7 +79,6 @@ private slots:
 	void onGetPlaylistFinished();
 	void showActive();
 	void showBusy();
-	void pagePopFinished(bb::cascades::Page* page);
 	void slotError(QNetworkReply::NetworkError err);
 	void slotSslErrors(QList<QSslError> errs);
 };

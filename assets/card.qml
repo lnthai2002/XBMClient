@@ -27,6 +27,7 @@ Page {
         bottomPadding: 20.0
         leftPadding: 20.0
         rightPadding: 20.0
+        background: Color.LightGray
         Label {
             id: lblMsg
             objectName: "lblMsg"

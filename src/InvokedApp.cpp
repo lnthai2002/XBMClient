@@ -29,33 +29,36 @@ InvokedApp::InvokedApp(QPointer<Server> s)
 	: server(s)
 	, netManager(new QNetworkAccessManager(this))
 {
-
 }
 
 InvokedApp::~InvokedApp(){
 	qDebug() << "Destructing invoked app";
 	delete netManager;
 	delete server;
-	//rdgActions->removeAll();
 }
 
 void InvokedApp::initUI(){
+	qDebug() << "init UI";
 	QmlDocument *qml = QmlDocument::create("asset:///card.qml").parent(this);
 
 	root = qml->createRootObject<AbstractPane>();
 	Application::instance()->setScene(root);
 
-//	QObject::connect(root, SIGNAL(popTransitionEnded(bb::cascades::Page*)),
-//	        this, SLOT(pagePopFinished(bb::cascades::Page*)));
+	lblMsg		= root->findChild<Label*>("lblMsg");
+	rdgActions	= root->findChild<RadioGroup*>("rdgActions");
+	indBusy		= root->findChild<ActivityIndicator*>("indBusy");
 
-	lblMsg = root->findChild<Label*>("lblMsg");
-	rdgActions = root->findChild<RadioGroup*>("rdgActions");
-	//rdgActions->removeAll();
-	indBusy = root->findChild<ActivityIndicator*>("indBusy");
-
+	//cleanup UI when finished
 	bool ok = QObject::connect(this, SIGNAL(finished()),
-							   qml, SLOT(deleteLater()));
+						rdgActions, SLOT(removeAll()));
 	Q_ASSERT(ok);
+
+	//listening to what user select
+	ok = QObject::connect(rdgActions, SIGNAL(selectedOptionChanged(bb::cascades::Option*)),
+						this, SLOT(dispatch(bb::cascades::Option*)));
+	Q_ASSERT(ok);
+
+	//stop busy indicator and enable widgets
 	ok = QObject::connect(this, SIGNAL(getActivePlayersError()),
 						this, SLOT(showActive()));
 	Q_ASSERT(ok);
@@ -80,13 +83,17 @@ void InvokedApp::initUI(){
 }
 
 void InvokedApp::playOnServer(const QString &url){
-	vidId = idFromUrl(url);
+	qDebug() << "root = " << root;
+	if (root.isNull()){//only reinit UI if app is no longer pooled
+		initUI();
+	}
+
+	setVideoClipId(url);
+
 	getActivePlayers();
+
 	bool ok = QObject::connect(this, SIGNAL(getActivePlayersFinished(QList<QVariant> &)),
 							this, SLOT(showActions(QList<QVariant>&)));
-	Q_ASSERT(ok);
-	ok = QObject::connect(rdgActions, SIGNAL(selectedOptionChanged(bb::cascades::Option*)),
-						this, SLOT(dispatch(bb::cascades::Option*)));
 	Q_ASSERT(ok);
 }
 
@@ -222,7 +229,7 @@ void InvokedApp::queueItem(){
 	showBusy();
 	//TODO: use jsonDataAccess to construct the request
 	QByteArray addSong = "{\"jsonrpc\": \"2.0\", \"method\": \"Playlist.Add\", \"params\":{\"playlistid\":1, \"item\" :{ \"file\" : \"plugin://plugin.video.youtube/?action=play_video&videoid=";
-	addSong.append(vidId);
+	addSong.append(videoClipId);
 	addSong.append("\"}}, \"id\" : 1}");
 
 	QNetworkRequest request;
@@ -322,7 +329,7 @@ void InvokedApp::onGetPlaylistFinished(){
 	response->deleteLater();
 }
 
-QString InvokedApp::idFromUrl(const QString &url){
+void InvokedApp::setVideoClipId(const QString &url){
 	QRegExp rx(URLPATTERN);
 	rx.setPatternSyntax(QRegExp::RegExp2);
 	rx.indexIn(url, 0);
@@ -348,7 +355,7 @@ QString InvokedApp::idFromUrl(const QString &url){
 		t++;
 	}
 */
-	return rx.cap(1);
+	videoClipId = rx.cap(1);
 }
 
 void InvokedApp::showBusy(){
@@ -361,13 +368,10 @@ void InvokedApp::showActive(){
 	rdgActions->setEnabled(true);
 }
 
-void InvokedApp::pagePopFinished(bb::cascades::Page* page){
-	qDebug() << "pop page";
-	delete page;
-}
-
 void InvokedApp::slotError(QNetworkReply::NetworkError err){
 	lblMsg->setText("Network error!");
+	rdgActions->add(Option::create().objectName("optCancel").text("cancel"));
+	showActive();
 }
 
 void InvokedApp::slotSslErrors(QList<QSslError> errs){

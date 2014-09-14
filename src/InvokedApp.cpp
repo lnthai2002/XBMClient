@@ -109,6 +109,7 @@ void InvokedApp::getActivePlayers(){
 		QNetworkRequest request;
 		request.setUrl(QUrl(server->json_url()));
 		request.setRawHeader("Content-Type", "application/json");
+		request.setRawHeader("Authorization", authorizationHeader().toLocal8Bit());
 
 		QByteArray *activePlayersQueryByteArray = new QByteArray();
 		jda.saveToBuffer(activePlayersQuery, activePlayersQueryByteArray);
@@ -198,6 +199,7 @@ void InvokedApp::clearPlaylist(){
 	QNetworkRequest request;
 	request.setUrl(QUrl(server->json_url()));
 	request.setRawHeader("Content-Type", "application/json");
+	request.setRawHeader("Authorization", authorizationHeader().toLocal8Bit());
 
 	QPointer<QNetworkReply> response = netManager->post(request, clearList);
 	bool ok = QObject::connect(response, SIGNAL(finished()),
@@ -235,6 +237,7 @@ void InvokedApp::queueItem(){
 	QNetworkRequest request;
 	request.setUrl(QUrl(server->json_url()));
 	request.setRawHeader("Content-Type", "application/json");
+	request.setRawHeader("Authorization", authorizationHeader().toLocal8Bit());
 
 	QPointer<QNetworkReply> response = netManager->post(request, addSong);
 	bool ok = connect(response, SIGNAL(finished()),
@@ -269,6 +272,7 @@ void InvokedApp::openPlayer(){
 	QNetworkRequest request;
 	request.setUrl(QUrl(server->json_url()));
 	request.setRawHeader("Content-Type", "application/json");
+	request.setRawHeader("Authorization", authorizationHeader().toLocal8Bit());
 
 	QPointer<QNetworkReply> response = netManager->post(request, openPlayer);
 	bool ok = connect(response, SIGNAL(finished()),
@@ -301,6 +305,7 @@ void InvokedApp::getPlaylist(){
 	QNetworkRequest request;
 	request.setUrl(QUrl(server->json_url()));
 	request.setRawHeader("Content-Type", "application/json");
+	request.setRawHeader("Authorization", authorizationHeader().toLocal8Bit());
 
 	QPointer<QNetworkReply> response = netManager->post(request, getItems);
 	bool ok = QObject::connect(response, SIGNAL(finished()),
@@ -376,4 +381,12 @@ void InvokedApp::slotError(QNetworkReply::NetworkError err){
 
 void InvokedApp::slotSslErrors(QList<QSslError> errs){
 
+}
+
+QString InvokedApp::authorizationHeader(){
+    // HTTP Basic authentication header value: base64(username:password)
+    QString concatenated = server->username() + ":" + server->password();
+    QByteArray data = concatenated.toLocal8Bit().toBase64();
+    QString headerData = "Basic " + data;
+    return headerData;
 }

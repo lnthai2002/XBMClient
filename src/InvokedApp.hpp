@@ -66,6 +66,7 @@ private:
 	void getActivePlayers();
 	void clearPlaylist();
 	void setVideoClipId(const QString &url);
+	QString authorizationHeader();
 private slots:
 	void dispatch(bb::cascades::Option* selectedOptions);
 	void showActions(QList<QVariant>& activePlayers);

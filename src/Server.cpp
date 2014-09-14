@@ -18,7 +18,7 @@ Server::~Server(){
 }
 
 QString Server::json_url(){
-	return ("http://"+ username_ + ":" + password_ + "@" + host_ + ":" + port_ + "/jsonrpc");
+	return ("http://" + host_ + ":" + port_ + "/jsonrpc");
 }
 
 QString Server::host(){
